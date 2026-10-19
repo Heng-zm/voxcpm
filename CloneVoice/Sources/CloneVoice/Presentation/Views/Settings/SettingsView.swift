@@ -246,11 +246,15 @@ public struct SettingsView: View {
     
     private var aboutSection: some View {
         GlassCard(cornerRadius: DesignTokens.Radii.large) {
-            VStack(spacing: 6) {
-                Text("Clone Voice — Native iOS 26.0+")
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
+            VStack(spacing: 8) {
+                Text("Clone Voice")
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
                 
-                Text("Engineered with Swift 6, SwiftUI Liquid Glass, and OpenBMB VoxCPM2.")
+                Text("Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.1.0") (Build \(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "6")) • Production")
+                    .font(.system(size: 12, weight: .medium, design: .monospaced))
+                    .foregroundColor(DesignTokens.Colors.acousticCyan)
+                
+                Text("Engineered with Swift 6, On-Device Metal GPU, and Apple Privacy Manifest compliance.")
                     .font(.system(size: 12))
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)

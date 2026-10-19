@@ -20,6 +20,9 @@ let package = Package(
             name: "CloneVoice",
             dependencies: [],
             path: "Sources/CloneVoice",
+            resources: [
+                .process("Resources")
+            ],
             swiftSettings: [
                 .enableExperimentalFeature("StrictConcurrency=complete"),
                 .define("SWIFT_STRICT_CONCURRENCY"),
