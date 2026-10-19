@@ -107,7 +107,6 @@ public struct SettingsView: View {
                                 .textFieldStyle(.plain)
                                 .font(.system(size: 14, design: .monospaced))
                                 .autocorrectionDisabled()
-                                .textInputAutocapitalization(.never)
                                 .onSubmit {
                                     updateEndpoint()
                                 }
