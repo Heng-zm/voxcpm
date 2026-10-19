@@ -2,7 +2,7 @@ import json
 from contextlib import asynccontextmanager
 from typing import Optional
 from fastapi import FastAPI, UploadFile, File, Form, Depends, HTTPException, status
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
@@ -10,6 +10,7 @@ from app.models import HealthResponse, SynthesisSettingsModel
 from app.voxcpm_engine import VoxCPMEngine
 from app.c2pa_signer import C2PASigner
 from app.security import verify_app_attest, compute_acoustic_hash, secure_ephemeral_wipe
+from app.web_ui import get_clonevoice_html
 
 # Global engine instance
 engine: Optional[VoxCPMEngine] = None
@@ -43,9 +44,20 @@ async def root():
         "app": settings.app_name,
         "version": settings.version,
         "status": "online",
+        "web_ui": "/index/clonevoice",
         "docs_url": "/docs",
         "health_url": "/v1/health"
     }
+
+@app.get("/index/clonevoice", response_class=HTMLResponse)
+async def clonevoice_web_interface():
+    """Serves the interactive Liquid Glass web interface for VoxCPM2 voice cloning."""
+    return HTMLResponse(content=get_clonevoice_html(), status_code=200)
+
+@app.get("/clonevoice", response_class=HTMLResponse, include_in_schema=False)
+async def clonevoice_web_interface_alias():
+    """Convenience alias route for the voice cloning studio."""
+    return HTMLResponse(content=get_clonevoice_html(), status_code=200)
 
 @app.get("/v1/health", response_model=HealthResponse)
 async def health_check():

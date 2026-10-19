@@ -16,7 +16,19 @@ def test_api_root_endpoint():
         data = response.json()
         assert data["status"] == "online"
         assert "docs_url" in data
+        assert data.get("web_ui") == "/index/clonevoice"
         print("  -> Passed root endpoint test.")
+
+def test_api_clonevoice_web_interface():
+    print("[TEST] Testing GET /index/clonevoice web interface...")
+    with TestClient(app) as client:
+        response = client.get("/index/clonevoice")
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}"
+        assert "text/html" in response.headers.get("content-type", "")
+        assert "Clone Voice" in response.text
+        assert "VoxCPM2" in response.text
+        assert "synthesis-text" in response.text
+        print("  -> Passed clonevoice web interface test.")
 
 def test_api_health_endpoint():
     print("[TEST] Testing GET /v1/health endpoint...")
