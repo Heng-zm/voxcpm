@@ -267,10 +267,19 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             2>&1 | tee build/logs/archive-unsigned.log
             
-          # Package app bundle into zip for testing inspection
-          cd build/CloneVoice.xcarchive/Products/Applications
-          zip -r "../../../../build/ipa/CloneVoice-unsigned.zip" CloneVoice.app
+          # Package real iPhone application into standard IPA container (Payload/CloneVoice.app)
+          mkdir -p build/ipa/Payload
+          cp -R build/CloneVoice.xcarchive/Products/Applications/CloneVoice.app build/ipa/Payload/
+          cd build/ipa
+          zip -qr CloneVoice-iphone.ipa Payload
+          cp CloneVoice-iphone.ipa CloneVoice.ipa
+          cd ../CloneVoice.xcarchive/Products/Applications
+          zip -qr "../../../../build/ipa/CloneVoice-unsigned.zip" CloneVoice.app
           cd ../../../..
+          rm -rf build/ipa/Payload
+          
+          IPA_SIZE=$(stat -f%z build/ipa/CloneVoice-iphone.ipa || wc -c < build/ipa/CloneVoice-iphone.ipa)
+          echo "Generated CloneVoice-iphone.ipa ($IPA_SIZE bytes)."
           
           # Create diagnostic manifest
           cat <<EOF > build/ipa/SIGNING_DIAGNOSTICS.txt
@@ -323,12 +332,11 @@ jobs:
             echo "- **Exported IPA:** \`build/ipa/CloneVoice-iphone.ipa\`" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "🎉 **The signed IPA is ready for direct installation on eligible registered iPhones.**" >> $GITHUB_STEP_SUMMARY
-          else
             echo "- **Signing Status:** ⚠️ Unsigned Build (Missing secrets: ${{ steps.credentials-check.outputs.MISSING_LIST }})" >> $GITHUB_STEP_SUMMARY
+            echo "- **Exported IPA:** \`build/ipa/CloneVoice-iphone.ipa\` (Ready for sideloading via AltStore / Sideloadly / TrollStore)" >> $GITHUB_STEP_SUMMARY
             echo "- **Diagnostic Report:** Included in artifact as \`SIGNING_DIAGNOSTICS.txt\`" >> $GITHUB_STEP_SUMMARY
-            echo "- **Unsigned Application:** \`build/ipa/CloneVoice-unsigned.zip\`" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "> **Action Required:** Configure \`IOS_CERTIFICATE_BASE64\`, \`IOS_PROVISIONING_PROFILE_BASE64\`, and \`APPLE_TEAM_ID\` in repository secrets to generate a signed \`.ipa\`." >> $GITHUB_STEP_SUMMARY
+            echo "> **Note:** Configure \`IOS_CERTIFICATE_BASE64\`, \`IOS_PROVISIONING_PROFILE_BASE64\`, and \`APPLE_TEAM_ID\` in repository secrets for official Apple Developer automated codesigning." >> $GITHUB_STEP_SUMMARY
           fi
 
       - name: Upload IPA & Diagnostic Artifacts
@@ -350,6 +358,9 @@ jobs:
           echo "Attaching iPhone build outputs to GitHub Release ${VERSION_TAG}..."
           if [ -f "build/ipa/CloneVoice-iphone.ipa" ]; then
             gh release upload "${VERSION_TAG}" "build/ipa/CloneVoice-iphone.ipa" --clobber || true
+          fi
+          if [ -f "build/ipa/CloneVoice.ipa" ]; then
+            gh release upload "${VERSION_TAG}" "build/ipa/CloneVoice.ipa" --clobber || true
           fi
           if [ -f "build/ipa/CloneVoice-unsigned.zip" ]; then
             gh release upload "${VERSION_TAG}" "build/ipa/CloneVoice-unsigned.zip" --clobber || true
