@@ -361,6 +361,11 @@ jobs:
         run: |
           VERSION_TAG="${{ github.ref_name }}"
           echo "Attaching iPhone build outputs to GitHub Release ${VERSION_TAG}..."
+          
+          # Create release if concurrent release job has not created it yet
+          gh release view "${VERSION_TAG}" >/dev/null 2>&1 || \
+            gh release create "${VERSION_TAG}" --title "Clone Voice ${VERSION_TAG}" --notes "Automated release build for ${VERSION_TAG}." || true
+            
           if [ -f "build/ipa/CloneVoice-iphone.ipa" ]; then
             gh release upload "${VERSION_TAG}" "build/ipa/CloneVoice-iphone.ipa" --clobber || true
           fi
