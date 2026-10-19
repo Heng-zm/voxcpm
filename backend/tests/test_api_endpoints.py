@@ -8,6 +8,16 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 from app.main import app
 
+def test_api_root_endpoint():
+    print("[TEST] Testing GET / endpoint...")
+    with TestClient(app) as client:
+        response = client.get("/")
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}"
+        data = response.json()
+        assert data["status"] == "online"
+        assert "docs_url" in data
+        print("  -> Passed root endpoint test.")
+
 def test_api_health_endpoint():
     print("[TEST] Testing GET /v1/health endpoint...")
     with TestClient(app) as client:

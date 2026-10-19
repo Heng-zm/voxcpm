@@ -1,0 +1,23 @@
+services:
+  # Clone Voice - VoxCPM2 Inference Gateway Service for Render.com
+  - type: web
+    name: clonevoice-inference-gateway
+    runtime: docker
+    dockerfilePath: backend/Dockerfile
+    dockerContext: backend
+    region: oregon
+    plan: starter
+    healthCheckPath: /v1/health
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: VOXCPM_MODEL_NAME
+        value: openbmb/VoxCPM2
+      - key: ZERO_RETENTION_DEFAULT
+        value: "true"
+      - key: C2PA_WATERMARK_ENABLED
+        value: "true"
+      - key: USE_CUDA
+        value: "false"
+      - key: DEVICE
+        value: cpu

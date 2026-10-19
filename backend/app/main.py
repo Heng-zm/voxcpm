@@ -36,6 +36,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+async def root():
+    """Service discovery and root status check."""
+    return {
+        "app": settings.app_name,
+        "version": settings.version,
+        "status": "online",
+        "docs_url": "/docs",
+        "health_url": "/v1/health"
+    }
+
 @app.get("/v1/health", response_model=HealthResponse)
 async def health_check():
     """Returns backend status, GPU model, and VRAM availability."""
