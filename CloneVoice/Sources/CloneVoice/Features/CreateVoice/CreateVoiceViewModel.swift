@@ -54,8 +54,16 @@ public final class CreateVoiceViewModel {
         
         do {
             #if os(iOS)
-            let session = AVAudioSession.sharedInstance()
-            let permission = await session.requestRecordPermission()
+            let permission: Bool
+            if #available(iOS 17.0, *) {
+                permission = await AVAudioApplication.requestRecordPermission()
+            } else {
+                permission = await withCheckedContinuation { continuation in
+                    AVAudioSession.sharedInstance().requestRecordPermission { granted in
+                        continuation.resume(returning: granted)
+                    }
+                }
+            }
             guard permission else {
                 errorMessage = "Microphone access denied. Please enable microphone permissions in Settings."
                 return
