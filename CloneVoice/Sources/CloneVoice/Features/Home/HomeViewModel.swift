@@ -91,9 +91,9 @@ public final class HomeViewModel {
                     isBiometricLocked: false
                 )
                 let starterURL = docs.appendingPathComponent("starter_sample.wav")
-                if !FileManager.default.fileExists(atPath: starterURL.path) {
-                    let header = AudioConverter.makeWAVHeader(dataLength: 48000 * 2 * 3)
-                    try? header.write(to: starterURL)
+                if !FileManager.default.fileExists(atPath: starterURL.path) || (try? Data(contentsOf: starterURL).count ?? 0) <= 44 {
+                    let starterWAV = AudioConverter.generateStarterSampleWAV(durationSeconds: 3.0)
+                    try? starterWAV.write(to: starterURL)
                 }
                 let starterConsent = ConsentContract(
                     termsVersion: "1.0",
@@ -231,14 +231,13 @@ public final class HomeViewModel {
                 profileHash: profile.acousticFeaturesHash
             )
             
-            var finalWAV = receivedAudio
-            if !AudioConverter.isValidWAV(data: finalWAV) {
-                let header = AudioConverter.makeWAVHeader(dataLength: receivedAudio.count)
-                finalWAV = header + receivedAudio
-            }
-            
+            // Ensure audio container has valid WAV header with correct data length
+            var finalWAV = AudioConverter.ensureValidWAV(data: receivedAudio)
             finalWAV = watermarkService.injectManifest(into: finalWAV, manifestData: manifestData)
             try finalWAV.write(to: outputURL, options: .atomic)
+            
+            let calculatedDuration = max(0.1, Double(max(0, finalWAV.count - 44)) / (48000.0 * 2.0))
+            let modelId = (inferenceService is OnDeviceMetalInferenceService) ? "Apple GPU (On-Device)" : "OpenBMB/VoxCPM2"
             
             let utterance = GeneratedUtterance(
                 id: pendingId,
@@ -247,9 +246,10 @@ public final class HomeViewModel {
                 text: trimmed,
                 createdAt: Date(),
                 audioFilename: outputFilename,
-                duration: Double(finalWAV.count) / (48000.0 * 2.0),
+                duration: calculatedDuration,
                 c2paManifestDigest: manifestData,
                 latencySeconds: latency,
+                modelIdentifier: modelId,
                 settings: settings,
                 status: .completed
             )

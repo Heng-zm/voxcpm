@@ -106,12 +106,8 @@ public final class SynthesisViewModel {
                 profileHash: profile.acousticFeaturesHash
             )
             
-            // If received audio lacks a valid WAV header, prepend one
-            var finalWAV = receivedAudio
-            if !AudioConverter.isValidWAV(data: finalWAV) {
-                let header = AudioConverter.makeWAVHeader(dataLength: receivedAudio.count)
-                finalWAV = header + receivedAudio
-            }
+            // Ensure audio container has valid WAV header with correct data length
+            var finalWAV = AudioConverter.ensureValidWAV(data: receivedAudio)
             
             // Inject C2PA provenance into the WAV container
             finalWAV = watermarkService.injectManifest(into: finalWAV, manifestData: manifestData)
@@ -119,16 +115,19 @@ public final class SynthesisViewModel {
             // Write to persistent storage
             try finalWAV.write(to: outputURL, options: .atomic)
             
+            let calculatedDuration = max(0.1, Double(max(0, finalWAV.count - 44)) / (48000.0 * 2.0))
+            let modelId = (inferenceService is OnDeviceMetalInferenceService) ? "Apple GPU (On-Device)" : "OpenBMB/VoxCPM2"
+            
             let utterance = GeneratedUtterance(
                 profileId: profile.id,
                 profileName: profile.name,
                 text: trimmed,
                 createdAt: Date(),
                 audioFilename: outputFilename,
-                duration: Double(finalWAV.count) / (48000.0 * 2.0),
+                duration: calculatedDuration,
                 c2paManifestDigest: manifestData,
                 latencySeconds: latency,
-                modelIdentifier: "OpenBMB/VoxCPM2",
+                modelIdentifier: modelId,
                 settings: settings,
                 status: .completed
             )

@@ -70,10 +70,6 @@ public final class OnDeviceMetalInferenceService: VoiceInferenceServiceProtocol,
         return AsyncThrowingStream { continuation in
             Task.detached {
                 do {
-                    // Send standard 48kHz WAV container header first
-                    let initialHeader = AudioConverter.makeWAVHeader(dataLength: 0)
-                    continuation.yield(initialHeader)
-                    
                     // Tokenize and break sentence into natural speech segments
                     let words = text.split(whereSeparator: { $0.isWhitespace || $0.isPunctuation })
                     let baseDurationPerWord: Double = max(0.22, min(0.48, 0.32 * (2.2 / max(1.0, cfgScale))))
@@ -94,6 +90,7 @@ public final class OnDeviceMetalInferenceService: VoiceInferenceServiceProtocol,
                         
                         // Synthesize 48kHz linear PCM audio buffer for segment
                         let samples = self.synthesizePhonemeBuffer(
+                            word: wordStr,
                             durationSamples: totalSamples,
                             targetF0: targetF0,
                             acousticProfile: acousticProfile,
@@ -103,7 +100,7 @@ public final class OnDeviceMetalInferenceService: VoiceInferenceServiceProtocol,
                             rng: &rng
                         )
                         
-                        // Convert float samples to 16-bit PCM WAV chunk
+                        // Convert float samples to 16-bit PCM chunk
                         let chunkData = self.floatSamplesToPCMData(samples)
                         continuation.yield(chunkData)
                         
@@ -183,6 +180,7 @@ public final class OnDeviceMetalInferenceService: VoiceInferenceServiceProtocol,
     // MARK: - Waveform Synthesis
     
     private func synthesizePhonemeBuffer(
+        word: String,
         durationSamples: Int,
         targetF0: Double,
         acousticProfile: AcousticSignature,
@@ -193,34 +191,44 @@ public final class OnDeviceMetalInferenceService: VoiceInferenceServiceProtocol,
     ) -> [Float] {
         var buffer = [Float](repeating: 0.0, count: durationSamples)
         let sampleRate = self.sampleRate
-        let f0 = targetF0
-        let f1 = acousticProfile.formantF1
-        let f2 = acousticProfile.formantF2
         let gain = acousticProfile.resonanceGain
         
-        var phase = startPhase
-        let phaseIncrement = (2.0 * Double.pi * f0) / sampleRate
+        let lowerWord = word.lowercased()
+        let (f1Target, f2Target) = formantsForWord(lowerWord, defaultF1: acousticProfile.formantF1, defaultF2: acousticProfile.formantF2)
         
-        let f1Inc = (2.0 * Double.pi * f1) / sampleRate
-        let f2Inc = (2.0 * Double.pi * f2) / sampleRate
+        var phase = startPhase
         var f1Phase: Double = 0.0
         var f2Phase: Double = 0.0
         
-        let envelopeAttack = Int(0.015 * sampleRate)
-        let envelopeDecay = Int(0.025 * sampleRate)
+        let envelopeAttack = max(16, Int(0.02 * sampleRate))
+        let envelopeDecay = max(16, Int(0.04 * sampleRate))
         
         for i in 0..<durationSamples {
-            // Harmonic excitation
+            let progress = Double(i) / Double(max(1, durationSamples))
+            
+            // Subtle vibrato (5.0 Hz, 1.5% depth)
+            let vibrato = 1.0 + 0.015 * sin(2.0 * Double.pi * 5.0 * progress * (Double(durationSamples) / sampleRate))
+            let currentF0 = targetF0 * vibrato
+            let phaseIncrement = (2.0 * Double.pi * currentF0) / sampleRate
+            
+            // Interpolate formants across duration
+            let f1 = acousticProfile.formantF1 * (1.0 - progress * 0.3) + f1Target * (progress * 0.3)
+            let f2 = acousticProfile.formantF2 * (1.0 - progress * 0.2) + f2Target * (progress * 0.2)
+            let f1Inc = (2.0 * Double.pi * f1) / sampleRate
+            let f2Inc = (2.0 * Double.pi * f2) / sampleRate
+            
+            // Harmonic glottal pulse
             let harmonic1 = sin(phase)
-            let harmonic2 = 0.5 * sin(2.0 * phase)
-            let harmonic3 = 0.25 * sin(3.0 * phase)
-            let glottalPulse = harmonic1 + harmonic2 + harmonic3
+            let harmonic2 = 0.52 * sin(2.0 * phase)
+            let harmonic3 = 0.26 * sin(3.0 * phase)
+            let harmonic4 = 0.12 * sin(4.0 * phase)
+            let glottalPulse = (harmonic1 + harmonic2 + harmonic3 + harmonic4) * 0.55
             
             // Vocal tract formant resonance
-            let formantResonance = (sin(f1Phase) * 0.45) + (sin(f2Phase) * 0.25)
+            let formantResonance = (sin(f1Phase) * 0.45) + (sin(f2Phase) * 0.28)
             
             // Subtle breathiness / aspiration
-            let noise = denoise ? 0.0 : Float.random(in: -0.015...0.015, using: &rng)
+            let noise = denoise ? 0.0 : Float.random(in: -0.012...0.012, using: &rng)
             
             // Envelope attack & release
             var envelope: Float = 1.0
@@ -246,6 +254,15 @@ public final class OnDeviceMetalInferenceService: VoiceInferenceServiceProtocol,
         
         startPhase = phase
         return buffer
+    }
+    
+    private func formantsForWord(_ word: String, defaultF1: Double, defaultF2: Double) -> (Double, Double) {
+        if word.contains("a") { return (800.0, 1250.0) }
+        if word.contains("e") { return (530.0, 1840.0) }
+        if word.contains("i") { return (300.0, 2300.0) }
+        if word.contains("o") { return (500.0, 900.0) }
+        if word.contains("u") { return (350.0, 800.0) }
+        return (defaultF1, defaultF2)
     }
     
     private func floatSamplesToPCMData(_ samples: [Float]) -> Data {

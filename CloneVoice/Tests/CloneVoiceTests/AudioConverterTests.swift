@@ -31,4 +31,35 @@ struct AudioConverterTests {
         let randomBytes = Data([0x00, 0x01, 0x02, 0x03])
         #expect(!AudioConverter.isValidWAV(data: randomBytes))
     }
+    
+    @Test("ensureValidWAV wraps raw PCM data with valid 44-byte header")
+    func testEnsureValidWAVWithRawPCM() {
+        let pcm = Data(repeating: 0x55, count: 4800)
+        let wav = AudioConverter.ensureValidWAV(data: pcm)
+        
+        #expect(wav.count == 44 + 4800)
+        #expect(AudioConverter.isValidWAV(data: wav))
+    }
+    
+    @Test("ensureValidWAV repairs zero-length data subchunk header")
+    func testEnsureValidWAVRepairZeroHeader() {
+        // Create broken header with 0 data length followed by actual PCM samples
+        let brokenHeader = AudioConverter.makeWAVHeader(dataLength: 0)
+        let pcm = Data(repeating: 0x7F, count: 9600)
+        let brokenWAV = brokenHeader + pcm
+        
+        let repaired = AudioConverter.ensureValidWAV(data: brokenWAV)
+        #expect(repaired.count == 44 + 9600)
+        
+        // Check subchunk2Size at offset 40..<44
+        let subchunkSize = repaired.subdata(in: 40..<44).withUnsafeBytes { $0.load(as: UInt32.self) }
+        #expect(subchunkSize == 9600)
+    }
+    
+    @Test("generateStarterSampleWAV produces complete 3-second playable WAV")
+    func testGenerateStarterSampleWAV() {
+        let starter = AudioConverter.generateStarterSampleWAV(durationSeconds: 1.0)
+        #expect(starter.count == 44 + (48000 * 2))
+        #expect(AudioConverter.isValidWAV(data: starter))
+    }
 }

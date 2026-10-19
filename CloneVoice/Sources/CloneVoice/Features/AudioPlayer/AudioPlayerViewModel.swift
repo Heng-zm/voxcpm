@@ -47,12 +47,20 @@ public final class AudioPlayerViewModel: NSObject, AVAudioPlayerDelegate {
             try session.setActive(true)
             #endif
             
+            // Auto-repair files where header subchunk2Size was 0 or divergent from actual PCM data
+            if let fileData = try? Data(contentsOf: url), fileData.count > 44 {
+                let validatedData = AudioConverter.ensureValidWAV(data: fileData)
+                if validatedData != fileData {
+                    try? validatedData.write(to: url, options: .atomic)
+                }
+            }
+            
             let player = try AVAudioPlayer(contentsOf: url)
             player.delegate = self
             player.prepareToPlay()
             
             self.audioPlayer = player
-            self.duration = player.duration
+            self.duration = max(0.0, player.duration)
             self.currentTime = 0.0
             self.progress = 0.0
             self.errorMessage = nil
@@ -64,14 +72,20 @@ public final class AudioPlayerViewModel: NSObject, AVAudioPlayerDelegate {
     public func togglePlayPause() {
         guard let player = audioPlayer else { return }
         
+        #if os(iOS)
+        try? AVAudioSession.sharedInstance().setActive(true)
+        #endif
+        
         if player.isPlaying {
             player.pause()
             self.isPlaying = false
             stopTimer()
         } else {
             // If at end, seek back to start
-            if currentTime >= duration - 0.1 {
+            if currentTime >= duration - 0.1 || currentTime >= duration {
                 player.currentTime = 0
+                self.currentTime = 0
+                self.progress = 0.0
             }
             player.play()
             self.isPlaying = true
