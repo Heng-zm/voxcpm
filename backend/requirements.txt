@@ -7,3 +7,5 @@ soundfile>=0.12.1
 torch>=2.5.0
 torchaudio>=2.5.0
 voxcpm>=0.1.0
+httpx>=0.27.0
+pytest>=8.0.0

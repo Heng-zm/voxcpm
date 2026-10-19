@@ -146,25 +146,67 @@ Tests validate:
 - C2PA manifest creation, binary injection, and extraction.
 - SwiftData entity conversions and domain model integrity.
 
-### Running Backend Verification Tests
+### Running Full Local Verification Suite
 ```bash
-python backend/tests/test_backend_core.py
+python verify_all.py
 ```
-Outputs:
-```
-[TEST] Testing C2PA manifest creation & injection...
-  -> Passed C2PA signing test.
-[TEST] Testing security hashing and memory wipe...
-  -> Passed Security hash and zero-wipe test.
-[TEST] Testing VoxCPMEngine chunked speech streaming...
-  -> Successfully streamed 3 audio chunks (chunk size: 4096 bytes).
+Executes:
+1. File architecture presence validation
+2. GitHub Actions YAML syntax and security validation
+3. Backend core suite (C2PA signing, security memory wipe, streaming)
+4. FastAPI endpoints and validation suite
+5. Explicit Khmer speech quality and RTF benchmark
 
-[SUCCESS] ALL BACKEND CORE VERIFICATION TESTS PASSED SUCCESSFULLY!
+---
+
+## 6. GitHub Actions — CI/CD Automation
+
+Clone Voice includes fully verified GitHub Actions workflows located in `.github/workflows/`:
+
+| Workflow File | Purpose | Runner | Triggers |
+| :--- | :--- | :--- | :--- |
+| [`.github/workflows/ios-ci.yml`](.github/workflows/ios-ci.yml) | iOS 26+ / Swift 6 build & automated test execution | `macos-15` | `push` to `main`, `pull_request` to `main`, `workflow_dispatch` |
+| [`.github/workflows/backend-ci.yml`](.github/workflows/backend-ci.yml) | Python 3.12 syntax, API validation, C2PA, and Khmer tests | `ubuntu-latest` | `push` on `backend/**`, `pull_request` on `backend/**`, `workflow_dispatch` |
+| [`.github/workflows/release.yml`](.github/workflows/release.yml) | Production release packaging & code signing | `macos-15` | `push` on tags `v*`, `workflow_dispatch` |
+
+### 6.1 Workflow Security & Reliability
+- **Least-Privilege Permissions:** Standard CI workflows run strictly with `permissions: contents: read`. Release workflow uses `permissions: contents: write` only when publishing GitHub release assets.
+- **Concurrency Groups:** Configured with `cancel-in-progress: true` to prevent redundant builds on rapid commits.
+- **No Weight Bloat:** Standard CI does not download multi-gigabyte VoxCPM2 model weights over GitHub Actions bandwidth; tests execute against the high-precision streaming acoustic engine. Full GPU weight testing is accessible via manual `workflow_dispatch`.
+- **Diagnostic Artifacts:** Builds automatically upload test execution logs and coverage reports with a 14-day retention policy.
+
+### 6.2 Code Signing Secrets Configuration (For Distribution)
+To export signed distribution IPAs for TestFlight or the App Store via `.github/workflows/release.yml`, configure the following repository secrets:
+
+| Secret Name | Description | Example Format |
+| :--- | :--- | :--- |
+| `APPLE_CERTIFICATE_BASE64` | Apple Distribution Certificate (.p12) encoded in Base64 | `base64 -i Cert.p12` |
+| `APPLE_CERTIFICATE_PASSWORD` | Password for the exported .p12 certificate file | Plaintext string |
+| `PROVISIONING_PROFILE_BASE64` | App Store Provisioning Profile (.mobileprovision) encoded in Base64 | `base64 -i Profile.mobileprovision` |
+| `APP_STORE_CONNECT_API_KEY_BASE64` | App Store Connect API Key (.p8) encoded in Base64 | `base64 -i AuthKey.p8` |
+| `APP_STORE_CONNECT_API_KEY_ID` | 10-character Key ID from App Store Connect | e.g. `2X9R4274ND` |
+| `APP_STORE_CONNECT_ISSUER_ID` | Issuer UUID from App Store Connect | e.g. `57246542-96fe-1a63-e053-0824d011072a` |
+
+> [!NOTE]
+> When signing credentials are not configured, `release.yml` safely produces an unsigned release bundle with clear diagnostic status, without failing or fabricating signed credentials.
+
+### 6.3 Local Workflow Validation
+Validate all GitHub Actions YAML configurations locally prior to committing:
+```bash
+python validate_workflows.py
 ```
 
 ---
 
-## 6. Open Source License
+## 7. Troubleshooting & FAQ
+
+- **Backend Memory Limits (Jetsam):** On consumer iOS hardware, genuine on-device execution of the 2B parameter VoxCPM2 model triggers Jetsam terminations. The app routes inference through the private backend gateway to safeguard responsiveness and battery health.
+- **Microphone Permissions:** If audio capture fails on the simulator, ensure permissions are granted in iOS Settings or test on physical hardware.
+- **Khmer Font & Script Handling:** For optimal syllable boundary rendering in Khmer, ensure the target system includes system font support for complex Unicode grapheme clusters.
+
+---
+
+## 8. Open Source License
 
 - **Clone Voice iOS Client:** MIT License.
 - **VoxCPM2 Model Weights & Architecture:** Apache-2.0 License by OpenBMB (Permits commercial and private deployment).

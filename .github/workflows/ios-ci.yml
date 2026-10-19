@@ -1,0 +1,107 @@
+name: iOS CI
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'CloneVoice/**'
+      - '.github/workflows/ios-ci.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'CloneVoice/**'
+      - '.github/workflows/ios-ci.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ios-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build & Test (iOS 26+ / Swift 6)
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Inspect Toolchain & SDKs
+        run: |
+          echo "### Toolchain Diagnostics" >> $GITHUB_STEP_SUMMARY
+          echo "- **Xcode Version:**" >> $GITHUB_STEP_SUMMARY
+          xcodebuild -version | sed 's/^/  /' >> $GITHUB_STEP_SUMMARY
+          echo "- **Swift Version:**" >> $GITHUB_STEP_SUMMARY
+          swift --version | head -n 1 | sed 's/^/  /' >> $GITHUB_STEP_SUMMARY
+          
+          echo "Selected Developer Directory: $(xcode-select -p)"
+          xcodebuild -version
+          swift --version
+          xcrun --show-sdk-version --sdk iphonesimulator || true
+
+      - name: Discover Available iOS Simulator
+        id: sim-discovery
+        run: |
+          # Discover an available iPhone simulator on this runner
+          echo "Discovering available iPhone simulators..."
+          AVAILABLE_SIM=$(xcrun simctl list devices available -j | jq -r '[.devices[] | .[] | select(.isAvailable == true and (.name | test("iPhone")))] | .[0].name')
+          
+          if [ -z "$AVAILABLE_SIM" ] || [ "$AVAILABLE_SIM" = "null" ]; then
+            echo "::warning::No specific iPhone simulator found, using generic available device"
+            AVAILABLE_SIM="iPhone 16"
+          fi
+          
+          echo "SELECTED_SIM=$AVAILABLE_SIM" >> $GITHUB_OUTPUT
+          echo "Discovered simulator: $AVAILABLE_SIM"
+          echo "- **Selected Simulator Target:** $AVAILABLE_SIM (iOS Simulator)" >> $GITHUB_STEP_SUMMARY
+
+      - name: Resolve Swift Package Dependencies
+        run: |
+          echo "Resolving SwiftPM dependencies in CloneVoice..."
+          swift package --package-path CloneVoice resolve
+
+      - name: Build CloneVoice Package
+        run: |
+          echo "Compiling CloneVoice with Swift 6 strict concurrency..."
+          swift build --package-path CloneVoice -c debug
+
+      - name: Run Swift Testing & Unit Tests
+        id: run-tests
+        run: |
+          mkdir -p build/reports
+          echo "Running CloneVoice test suites..."
+          swift test --package-path CloneVoice --enable-code-coverage 2>&1 | tee build/reports/swift-test.log
+          TEST_EXIT_CODE=${PIPESTATUS[0]}
+          if [ $TEST_EXIT_CODE -ne 0 ]; then
+            echo "::error::Swift test suite failed with exit code $TEST_EXIT_CODE"
+            exit $TEST_EXIT_CODE
+          fi
+
+      - name: Generate Build & Test Step Summary
+        if: always()
+        run: |
+          echo "### Test Execution Results" >> $GITHUB_STEP_SUMMARY
+          if [ -f build/reports/swift-test.log ]; then
+            PASSED_COUNT=$(grep -c "passed" build/reports/swift-test.log || true)
+            echo "- Test Log Summary: $PASSED_COUNT suites/cases reported passed." >> $GITHUB_STEP_SUMMARY
+            echo '```text' >> $GITHUB_STEP_SUMMARY
+            tail -n 25 build/reports/swift-test.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No test log found." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload Test Logs & Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-test-logs-${{ github.run_id }}
+          path: |
+            build/reports/
+            build/*.log
+          retention-days: 14
+          if-no-files-found: ignore

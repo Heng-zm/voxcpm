@@ -70,7 +70,13 @@ if __name__ == "__main__":
     if not verify_file_presence():
         success = False
         
+    if not run_step("GitHub Actions Workflows Syntax & Security Validation", f"{sys.executable} validate_workflows.py"):
+        success = False
+        
     if not run_step("Backend Core Suite (C2PA, Security, Engine)", f"{sys.executable} backend/tests/test_backend_core.py"):
+        success = False
+        
+    if not run_step("Backend API Endpoints & Validation Suite", f"{sys.executable} backend/tests/test_api_endpoints.py"):
         success = False
         
     if not run_step("Explicit Khmer Speech & RTF Quality Suite", f"{sys.executable} backend/tests/test_khmer_speech.py"):
