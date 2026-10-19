@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  voxcpm2-inference:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: clonevoice-voxcpm2-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - VOXCPM_MODEL_NAME=openbmb/VoxCPM2
+      - USE_CUDA=true
+      - DEVICE=cuda
+      - PORT=8000
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    volumes:
+      - huggingface-cache:/root/.cache/huggingface
+
+volumes:
+  huggingface-cache:

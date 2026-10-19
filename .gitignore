@@ -1,0 +1,45 @@
+# Xcode & Apple
+.DS_Store
+*/.DS_Store
+build/
+DerivedData/
+*.xcworkspace
+*.xcuserdatad
+xcuserdata/
+*.xccheckout
+*.xcscmblueprint
+.build/
+.swiftpm/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Docker & Temp
+.env
+*.log
+scratch/
+temp_audio/
+*.wav
+*.mp3
+!backend/tests/fixtures/*.wav
