@@ -14,6 +14,28 @@ try:
 except ImportError:
     HAS_VOXCPM = False
 
+def make_wav_header(data_length: int, sample_rate: int = 48000, channels: int = 1, bits_per_sample: int = 16) -> bytes:
+    """Builds a standard 44-byte RIFF/WAVE container header for linear PCM audio."""
+    byte_rate = sample_rate * channels * (bits_per_sample // 8)
+    block_align = channels * (bits_per_sample // 8)
+    chunk_size = 36 + data_length
+    
+    header = bytearray()
+    header.extend(b"RIFF")
+    header.extend(struct.pack("<I", min(chunk_size, 0xFFFFFFFF)))
+    header.extend(b"WAVE")
+    header.extend(b"fmt ")
+    header.extend(struct.pack("<I", 16)) # Subchunk1Size (16 for PCM)
+    header.extend(struct.pack("<H", 1))  # AudioFormat (1 = PCM)
+    header.extend(struct.pack("<H", channels))
+    header.extend(struct.pack("<I", sample_rate))
+    header.extend(struct.pack("<I", byte_rate))
+    header.extend(struct.pack("<H", block_align))
+    header.extend(struct.pack("<H", bits_per_sample))
+    header.extend(b"data")
+    header.extend(struct.pack("<I", min(data_length, 0xFFFFFFFF)))
+    return bytes(header)
+
 class VoxCPMEngine:
     """
     Manages VoxCPM2 model loading, zero-shot voice cloning inference, and chunked streaming.
@@ -103,6 +125,7 @@ class VoxCPMEngine:
                 
                 # Stream out 4096-byte blocks
                 wav_int16 = (wav * 32767.0).astype(np.int16).tobytes()
+                yield make_wav_header(len(wav_int16), sample_rate=16000)
                 chunk_size = 4096
                 for i in range(0, len(wav_int16), chunk_size):
                     yield wav_int16[i:i + chunk_size]
@@ -134,6 +157,8 @@ class VoxCPMEngine:
             total_duration = max(1.2, len(words) * 0.38)
             
         total_samples = int(sample_rate * total_duration)
+        total_data_length = total_samples * 2
+        yield make_wav_header(total_data_length, sample_rate=sample_rate)
         chunk_samples = 2048 # ~42ms per chunk for silky smooth streaming
         
         # Base pitch modulated deterministically
