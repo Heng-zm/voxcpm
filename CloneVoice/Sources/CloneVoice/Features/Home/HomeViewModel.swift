@@ -96,10 +96,11 @@ public final class HomeViewModel {
                     try? header.write(to: starterURL)
                 }
                 let starterConsent = ConsentContract(
-                    profileId: starterProfile.id,
-                    speakerFullName: "Clone Voice Demo Speaker",
-                    consentText: "Authorized sample voice for real-time speech generation",
-                    biometricSignatureHash: "demo-signature-hash"
+                    termsVersion: "1.0",
+                    verificationScriptText: "Authorized sample voice for real-time speech generation.",
+                    spokenVerificationAudioFilename: "starter_sample.wav",
+                    biometricSignatureSHA256: "demo-signature-hash",
+                    deviceModelIdentifier: "Apple-Device"
                 )
                 try? await profileRepository.saveProfile(starterProfile, consent: starterConsent)
                 self.availableProfiles = [starterProfile]
@@ -113,7 +114,6 @@ public final class HomeViewModel {
             
             // Populate recent conversation items from persisted utterances
             let recentUtterances = try await utteranceRepository.fetchUtterances(profileId: nil)
-            let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
             
             self.conversation = recentUtterances.compactMap { utterance -> ConversationItem? in
                 let audioURL = docs.appendingPathComponent(utterance.audioFilename)
