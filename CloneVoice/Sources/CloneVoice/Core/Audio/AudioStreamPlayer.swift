@@ -35,25 +35,34 @@ public actor AudioStreamPlayer: AudioPlaybackProtocol {
         
         player.play()
         
-        return AsyncStream { continuation in
-            engine.mainMixerNode.installTap(onBus: 0, bufferSize: 1024, format: format) { buffer, _ in
-                guard let channelData = buffer.floatChannelData?[0] else { return }
-                let frameCount = Int(buffer.frameLength)
-                var sum: Float = 0
-                for i in 0..<frameCount {
-                    sum += channelData[i] * channelData[i]
-                }
-                let rms = sqrt(sum / Float(max(1, frameCount)))
-                let normalized = AudioConverter.normalizeDecibels(rms: rms)
-                continuation.yield(normalized)
+        var continuationRef: AsyncStream<Float>.Continuation?
+        let stream = AsyncStream<Float> { continuation in
+            continuationRef = continuation
+        }
+        
+        guard let continuation = continuationRef else {
+            return stream
+        }
+        
+        engine.mainMixerNode.installTap(onBus: 0, bufferSize: 1024, format: format) { buffer, _ in
+            guard let channelData = buffer.floatChannelData?[0] else { return }
+            let frameCount = Int(buffer.frameLength)
+            var sum: Float = 0
+            for i in 0..<frameCount {
+                sum += channelData[i] * channelData[i]
             }
-            
-            continuation.onTermination = { [weak self] _ in
-                Task { [weak self] in
-                    await self?.stop()
-                }
+            let rms = sqrt(sum / Float(max(1, frameCount)))
+            let normalized = AudioConverter.normalizeDecibels(rms: rms)
+            continuation.yield(normalized)
+        }
+        
+        continuation.onTermination = { [weak self] _ in
+            Task { [weak self] in
+                await self?.stop()
             }
         }
+        
+        return stream
     }
     
     public func enqueueChunk(_ chunk: Data) throws {

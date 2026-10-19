@@ -43,7 +43,7 @@ public struct SpeechGenerationStudioView: View {
             .navigationTitle("Voice Studio")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     Button(action: {
                         isSettingsPresented = true
                     }) {
@@ -112,7 +112,7 @@ public struct SpeechGenerationStudioView: View {
                     BiometricLockBadge(isLocked: profile.isBiometricLocked)
                 } else {
                     Button("Select") {
-                        router.selectedTab = .deck
+                        router.selectedTab = .library
                     }
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(DesignTokens.Colors.acousticCyan)

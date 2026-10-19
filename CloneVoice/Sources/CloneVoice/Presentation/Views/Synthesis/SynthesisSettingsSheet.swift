@@ -148,7 +148,7 @@ public struct SynthesisSettingsSheet: View {
             .navigationTitle("VoxCPM2 Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
                         dismiss()
                     }

@@ -53,7 +53,7 @@ public struct VoiceLibraryView: View {
             .navigationTitle("Voice Library")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     Button(action: {
                         isCreateVoicePresented = true
                     }) {
@@ -189,7 +189,7 @@ public struct VoiceLibraryView: View {
                         
                         Button(action: {
                             router.activeProfileForSynthesis = profile
-                            router.selectedTab = .synthesis
+                            router.selectedTab = .studio
                         }) {
                             Label("Use in Studio", systemImage: "waveform.badge.mic")
                         }

@@ -84,8 +84,8 @@ public final class AudioPlayerViewModel: NSObject, AVAudioPlayerDelegate {
     private func startTimer() {
         stopTimer()
         timer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
-            guard let self = self, let player = self.audioPlayer else { return }
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
+                guard let self = self, let player = self.audioPlayer else { return }
                 self.currentTime = player.currentTime
                 if self.duration > 0 {
                     self.progress = player.currentTime / self.duration

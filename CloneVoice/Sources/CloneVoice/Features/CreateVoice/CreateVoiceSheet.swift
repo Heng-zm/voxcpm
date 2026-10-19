@@ -88,7 +88,7 @@ public struct CreateVoiceSheet: View {
             .navigationTitle("New Voice Profile")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
                         dismiss()
                     }

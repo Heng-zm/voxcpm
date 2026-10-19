@@ -1,7 +1,7 @@
 import SwiftUI
 
 #if !os(iOS)
-/// macOS cross-compilation compatibility layer for iOS-specific navigation modifiers.
+/// macOS cross-compilation compatibility layer for iOS-specific navigation and toolbar APIs.
 public enum NavigationBarItem {
     public enum TitleDisplayMode: Sendable {
         case automatic

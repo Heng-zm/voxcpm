@@ -64,7 +64,7 @@ public struct ProvenanceDetailSheet: View {
             .navigationTitle("Provenance Inspector")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
                         dismiss()
                     }

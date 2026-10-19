@@ -62,7 +62,7 @@ public struct HomeConversationView: View {
             .navigationTitle("Clone Voice")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     Button(action: {
                         viewModel?.startNewGeneration()
                     }) {
@@ -393,12 +393,12 @@ public struct HomeConversationView: View {
             .navigationTitle("Select Voice")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: .cancellationAction) {
                     Button("Close") {
                         isVoicePickerPresented = false
                     }
                 }
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     Button(action: {
                         isVoicePickerPresented = false
                         router.isEnrollmentPresented = true

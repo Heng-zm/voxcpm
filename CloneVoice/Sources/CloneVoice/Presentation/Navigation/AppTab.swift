@@ -8,6 +8,12 @@ public enum AppTab: String, CaseIterable, Identifiable {
     case history = "History"
     case settings = "Settings"
     
+    /// Backward-compatible alias for studio tab
+    public static var synthesis: AppTab { .studio }
+    
+    /// Backward-compatible alias for voice library / deck tab
+    public static var deck: AppTab { .library }
+    
     public var id: String { rawValue }
     
     public var iconName: String {

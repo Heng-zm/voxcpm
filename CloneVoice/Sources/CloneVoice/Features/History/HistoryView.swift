@@ -48,7 +48,7 @@ public struct HistoryView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 if let vm = viewModel, !vm.utterances.isEmpty {
-                    ToolbarItem(placement: .topBarTrailing) {
+                    ToolbarItem(placement: .primaryAction) {
                         Button("Clear All") {
                             isClearConfirmationPresented = true
                         }

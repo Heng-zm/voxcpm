@@ -44,7 +44,7 @@ public struct VoiceDeckView: View {
             .navigationTitle("Voice Deck")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     Button(action: {
                         router.isEnrollmentPresented = true
                     }) {
@@ -141,7 +141,7 @@ public struct VoiceDeckView: View {
                             let authorized = await vm.authorizeProfileAccess(profile: profile)
                             if authorized {
                                 router.activeProfileForSynthesis = profile
-                                router.selectedTab = .synthesis
+                                router.selectedTab = .studio
                             }
                         }
                     },

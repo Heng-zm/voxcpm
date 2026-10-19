@@ -54,37 +54,47 @@ public actor AudioEngineActor: AudioRecordingProtocol {
         self.startTime = Date()
         self.isRecording = true
         
-        return AsyncStream { continuation in
-            input.installTap(onBus: 0, bufferSize: 1024, format: inputFormat) { [weak self] buffer, _ in
-                // Write buffer to disk
-                try? file.write(from: buffer)
-                
-                // Compute real-time RMS level
-                guard let channelData = buffer.floatChannelData?[0] else { return }
-                let frameCount = Int(buffer.frameLength)
-                var sum: Float = 0
-                for i in 0..<frameCount {
-                    let sample = channelData[i]
-                    sum += sample * sample
-                }
-                let rms = sqrt(sum / Float(max(1, frameCount)))
-                let normalized = AudioConverter.normalizeDecibels(rms: rms)
-                
-                continuation.yield(normalized)
-            }
+        var continuationRef: AsyncStream<Float>.Continuation?
+        let stream = AsyncStream<Float> { continuation in
+            continuationRef = continuation
+        }
+        
+        guard let continuation = continuationRef else {
+            throw AudioEngineError.recordingFailed("Failed to initialize audio stream continuation.")
+        }
+        
+        input.installTap(onBus: 0, bufferSize: 1024, format: inputFormat) { buffer, _ in
+            // Write buffer to disk
+            try? file.write(from: buffer)
             
-            do {
-                try engine.start()
-            } catch {
-                continuation.finish()
+            // Compute real-time RMS level
+            guard let channelData = buffer.floatChannelData?[0] else { return }
+            let frameCount = Int(buffer.frameLength)
+            var sum: Float = 0
+            for i in 0..<frameCount {
+                let sample = channelData[i]
+                sum += sample * sample
             }
+            let rms = sqrt(sum / Float(max(1, frameCount)))
+            let normalized = AudioConverter.normalizeDecibels(rms: rms)
             
-            continuation.onTermination = { [weak self] _ in
-                Task { [weak self] in
-                    _ = try? await self?.stopRecording()
-                }
+            continuation.yield(normalized)
+        }
+        
+        do {
+            try engine.start()
+        } catch {
+            continuation.finish()
+            throw AudioEngineError.recordingFailed("Failed to start audio engine: \(error.localizedDescription)")
+        }
+        
+        continuation.onTermination = { [weak self] _ in
+            Task { [weak self] in
+                _ = try? await self?.stopRecording()
             }
         }
+        
+        return stream
     }
     
     public func stopRecording() throws -> TimeInterval {

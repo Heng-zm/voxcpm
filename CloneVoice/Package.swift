@@ -22,7 +22,8 @@ let package = Package(
             path: "Sources/CloneVoice",
             swiftSettings: [
                 .enableExperimentalFeature("StrictConcurrency=complete"),
-                .define("SWIFT_STRICT_CONCURRENCY")
+                .define("SWIFT_STRICT_CONCURRENCY"),
+                .define("SWIFT_PACKAGE")
             ]
         ),
         .testTarget(
