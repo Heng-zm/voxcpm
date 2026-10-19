@@ -42,6 +42,9 @@ public final class HomeViewModel {
     public var generationProgress: Double = 0.0
     public var errorMessage: String?
     
+    public var backendStatus: BackendStatus?
+    public var isCheckingBackend: Bool = false
+    
     private let inferenceClient: VoxCPMInferenceClient
     private let profileRepository: any VoiceProfileRepositoryProtocol
     private let utteranceRepository: any UtteranceRepositoryProtocol
@@ -62,12 +65,51 @@ public final class HomeViewModel {
         self.biometricAuth = biometricAuth
     }
     
+    public func checkBackendConnectivity() async {
+        isCheckingBackend = true
+        do {
+            self.backendStatus = try await inferenceClient.checkHealth()
+        } catch {
+            self.backendStatus = .offline(reason: error.localizedDescription)
+        }
+        isCheckingBackend = false
+    }
+    
     public func loadInitialData() async {
+        async let connectivityCheck: () = checkBackendConnectivity()
         do {
             self.availableProfiles = try await profileRepository.fetchProfiles()
+            let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            
+            // Provide an authorized starter demo voice profile so users can test immediately
+            if self.availableProfiles.isEmpty {
+                let starterProfile = VoiceProfile(
+                    name: "AI Voice (Default)",
+                    referenceAudioFilename: "starter_sample.wav",
+                    sampleDuration: 3.0,
+                    acousticFeaturesHash: "sha256-default-starter-voice",
+                    isBiometricLocked: false
+                )
+                let starterURL = docs.appendingPathComponent("starter_sample.wav")
+                if !FileManager.default.fileExists(atPath: starterURL.path) {
+                    let header = AudioConverter.makeWAVHeader(dataLength: 48000 * 2 * 3)
+                    try? header.write(to: starterURL)
+                }
+                let starterConsent = ConsentContract(
+                    profileId: starterProfile.id,
+                    speakerFullName: "Clone Voice Demo Speaker",
+                    consentText: "Authorized sample voice for real-time speech generation",
+                    biometricSignatureHash: "demo-signature-hash"
+                )
+                try? await profileRepository.saveProfile(starterProfile, consent: starterConsent)
+                self.availableProfiles = [starterProfile]
+            }
+            
             if selectedProfile == nil {
                 self.selectedProfile = availableProfiles.first
             }
+            
+            _ = await connectivityCheck
             
             // Populate recent conversation items from persisted utterances
             let recentUtterances = try await utteranceRepository.fetchUtterances(profileId: nil)

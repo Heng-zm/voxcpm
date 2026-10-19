@@ -9,6 +9,7 @@ public struct HomeConversationView: View {
     @State private var viewModel: HomeViewModel?
     @State private var isVoicePickerPresented = false
     @State private var isAudioImporterPresented = false
+    @State private var isCreateVoicePresented = false
     
     public init() {}
     
@@ -87,13 +88,19 @@ public struct HomeConversationView: View {
             .sheet(isPresented: $isVoicePickerPresented) {
                 voiceSelectorSheet
             }
+            .sheet(isPresented: $isCreateVoicePresented) {
+                CreateVoiceSheet(onCreated: {
+                    Task {
+                        await viewModel?.loadInitialData()
+                    }
+                })
+            }
             .fileImporter(
                 isPresented: $isAudioImporterPresented,
                 allowedContentTypes: [.audio, .wav, .mp3],
                 allowsMultipleSelection: false
             ) { result in
-                // Routes directly to voice enrollment
-                router.isEnrollmentPresented = true
+                isCreateVoicePresented = true
             }
         }
     }
@@ -125,6 +132,64 @@ public struct HomeConversationView: View {
             }
             
             Spacer()
+            
+            // Cloud Backend Connection Badge
+            if let status = viewModel?.backendStatus {
+                switch status {
+                case .ready:
+                    HStack(spacing: 5) {
+                        Circle()
+                            .fill(Color.green)
+                            .frame(width: 6, height: 6)
+                        Text("Cloud Ready")
+                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.white.opacity(0.06))
+                    .clipShape(Capsule())
+                case .offline:
+                    HStack(spacing: 5) {
+                        Circle()
+                            .fill(Color.orange)
+                            .frame(width: 6, height: 6)
+                        Text("Reconnecting")
+                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.white.opacity(0.06))
+                    .clipShape(Capsule())
+                case .busy(let position):
+                    HStack(spacing: 5) {
+                        Circle()
+                            .fill(Color.cyan)
+                            .frame(width: 6, height: 6)
+                        Text("Queue: \(position)")
+                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.white.opacity(0.06))
+                    .clipShape(Capsule())
+                }
+            } else if viewModel?.isCheckingBackend ?? false {
+                HStack(spacing: 5) {
+                    ProgressView()
+                        .scaleEffect(0.6)
+                        .frame(width: 6, height: 6)
+                    Text("Connecting")
+                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .foregroundColor(.secondary)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color.white.opacity(0.06))
+                .clipShape(Capsule())
+            }
             
             if let profile = viewModel?.selectedProfile {
                 BiometricLockBadge(isLocked: profile.isBiometricLocked)
@@ -177,7 +242,7 @@ public struct HomeConversationView: View {
             
             if viewModel?.availableProfiles.isEmpty ?? true {
                 Button(action: {
-                    router.isEnrollmentPresented = true
+                    isCreateVoicePresented = true
                 }) {
                     HStack(spacing: 8) {
                         Image(systemName: "plus.circle.fill")
@@ -401,7 +466,7 @@ public struct HomeConversationView: View {
                 ToolbarItem(placement: .primaryAction) {
                     Button(action: {
                         isVoicePickerPresented = false
-                        router.isEnrollmentPresented = true
+                        isCreateVoicePresented = true
                     }) {
                         Image(systemName: "plus")
                     }
