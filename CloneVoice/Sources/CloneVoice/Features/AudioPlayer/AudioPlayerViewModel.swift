@@ -28,7 +28,9 @@ public final class AudioPlayerViewModel: NSObject, AVAudioPlayerDelegate {
                   let typeValue = info[AVAudioSessionInterruptionTypeKey] as? UInt,
                   let type = AVAudioSession.InterruptionType(rawValue: typeValue) else { return }
             if type == .began {
-                self?.pause()
+                Task { @MainActor [weak self] in
+                    self?.pause()
+                }
             }
         }
         #endif

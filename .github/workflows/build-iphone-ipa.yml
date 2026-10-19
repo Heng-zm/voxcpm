@@ -267,6 +267,11 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             2>&1 | tee build/logs/archive-unsigned.log
             
+          if [ ${PIPESTATUS[0]} -ne 0 ] || [ ! -d "build/CloneVoice.xcarchive/Products/Applications/CloneVoice.app" ]; then
+            echo "::error::xcodebuild archive failed or app bundle missing."
+            exit 1
+          fi
+            
           # Package real iPhone application into standard IPA container (Payload/CloneVoice.app)
           mkdir -p build/ipa/Payload
           cp -R build/CloneVoice.xcarchive/Products/Applications/CloneVoice.app build/ipa/Payload/

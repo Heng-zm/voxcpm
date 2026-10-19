@@ -229,9 +229,10 @@ public final class CreateVoiceViewModel {
         }
     }
     
-    deinit {
+    public func cancel() {
         if let url = temporaryAudioURL {
             try? FileManager.default.removeItem(at: url)
+            temporaryAudioURL = nil
         }
     }
 }

@@ -90,6 +90,7 @@ public struct CreateVoiceSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
+                        viewModel?.cancel()
                         dismiss()
                     }
                 }
