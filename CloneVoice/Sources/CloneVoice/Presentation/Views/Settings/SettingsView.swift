@@ -61,13 +61,14 @@ public struct SettingsView: View {
                         .foregroundColor(.secondary)
                     
                     HStack {
-                        TextField("http://127.0.0.1:8000", text: $backendURLString)
+                        TextField("https://voxcpm-xsp6.onrender.com", text: $backendURLString)
                             .textFieldStyle(.plain)
                             .font(.system(size: 14, design: .monospaced))
                         
                         Button("Update") {
                             if let url = URL(string: backendURLString) {
                                 env.inferenceClient.baseURL = url
+                                UserDefaults.standard.set(backendURLString, forKey: "custom_backend_url")
                                 Task {
                                     await checkHealth()
                                 }

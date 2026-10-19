@@ -6,7 +6,7 @@ public final class VoxCPMInferenceClient: VoiceInferenceServiceProtocol, @unchec
     private let session: URLSession
     
     public init(
-        baseURL: URL = URL(string: "http://127.0.0.1:8000")!,
+        baseURL: URL = URL(string: "https://voxcpm-xsp6.onrender.com")!,
         session: URLSession = .shared
     ) {
         self.baseURL = baseURL

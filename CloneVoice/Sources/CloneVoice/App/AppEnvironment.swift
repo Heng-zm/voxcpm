@@ -16,14 +16,20 @@ public final class AppEnvironment {
     
     public init(
         inMemory: Bool = false,
-        backendURL: URL = URL(string: "http://127.0.0.1:8000")!
+        backendURL: URL? = nil
     ) {
         let container = SwiftDataContainer(inMemory: inMemory).container
         self.profileRepository = SwiftDataVoiceProfileRepository(container: container)
         self.utteranceRepository = SwiftDataUtteranceRepository(container: container)
         self.audioEngine = AudioEngineActor()
         self.streamPlayer = AudioStreamPlayer()
-        self.inferenceClient = VoxCPMInferenceClient(baseURL: backendURL)
+        
+        let storedURLString = UserDefaults.standard.string(forKey: "custom_backend_url")
+        let effectiveURL = backendURL 
+            ?? storedURLString.flatMap(URL.init(string:)) 
+            ?? URL(string: "https://voxcpm-xsp6.onrender.com")!
+            
+        self.inferenceClient = VoxCPMInferenceClient(baseURL: effectiveURL)
         self.biometricAuth = BiometricAuthService.shared
         self.watermarkService = C2PAWatermarkService.shared
     }
