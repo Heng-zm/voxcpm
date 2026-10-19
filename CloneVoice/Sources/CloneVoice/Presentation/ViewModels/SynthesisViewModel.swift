@@ -107,10 +107,7 @@ public final class SynthesisViewModel {
             )
             
             // Ensure audio container has valid WAV header with correct data length
-            var finalWAV = AudioConverter.ensureValidWAV(data: receivedAudio)
-            
-            // Inject C2PA provenance into the WAV container
-            finalWAV = watermarkService.injectManifest(into: finalWAV, manifestData: manifestData)
+            let finalWAV = AudioConverter.extractCleanWAV(from: receivedAudio)
             
             // Write to persistent storage
             try finalWAV.write(to: outputURL, options: .atomic)

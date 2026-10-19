@@ -78,10 +78,18 @@ public struct AudioPlayerView: View {
                     
                     Spacer()
                     
-                    Text(formatTime(viewModel.duration))
+                    Text(formatTime(viewModel.duration, isDuration: true))
                         .font(.system(size: 11, weight: .medium, design: .monospaced))
                         .foregroundColor(.secondary)
                 }
+            }
+            
+            // Error feedback if loading failed
+            if let error = viewModel.errorMessage {
+                Text(error)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(DesignTokens.Colors.destructiveRed)
+                    .multilineTextAlignment(.center)
             }
             
             // Play / Pause Control
@@ -128,9 +136,9 @@ public struct AudioPlayerView: View {
         #endif
     }
     
-    private func formatTime(_ time: TimeInterval) -> String {
-        guard !time.isNaN && !time.isInfinite else { return "0:00" }
-        let totalSeconds = Int(max(0, time))
+    private func formatTime(_ time: TimeInterval, isDuration: Bool = false) -> String {
+        guard !time.isNaN && !time.isInfinite && time > 0 else { return "0:00" }
+        let totalSeconds = isDuration ? max(1, Int(round(time))) : Int(max(0, time))
         let minutes = totalSeconds / 60
         let seconds = totalSeconds % 60
         return String(format: "%d:%02d", minutes, seconds)

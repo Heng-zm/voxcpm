@@ -47,20 +47,38 @@ public final class AudioPlayerViewModel: NSObject, AVAudioPlayerDelegate {
             try session.setActive(true)
             #endif
             
-            // Auto-repair files where header subchunk2Size was 0 or divergent from actual PCM data
-            if let fileData = try? Data(contentsOf: url), fileData.count > 44 {
-                let validatedData = AudioConverter.ensureValidWAV(data: fileData)
-                if validatedData != fileData {
-                    try? validatedData.write(to: url, options: .atomic)
-                }
+            guard let fileData = try? Data(contentsOf: url), !fileData.isEmpty else {
+                self.errorMessage = "Audio file is empty or missing"
+                return
             }
             
-            let player = try AVAudioPlayer(contentsOf: url)
+            // Clean file by stripping any corrupting non-standard chunks and repairing header
+            let cleanData = AudioConverter.extractCleanWAV(from: fileData)
+            if cleanData != fileData {
+                try? cleanData.write(to: url, options: .atomic)
+            }
+            
+            // Try file-based player, with in-memory Data player as resilient fallback
+            var activePlayer: AVAudioPlayer? = try? AVAudioPlayer(contentsOf: url)
+            if activePlayer == nil {
+                activePlayer = try? AVAudioPlayer(data: cleanData)
+            }
+            
+            guard let player = activePlayer else {
+                self.errorMessage = "Failed to decode WAV audio"
+                return
+            }
+            
             player.delegate = self
             player.prepareToPlay()
-            
             self.audioPlayer = player
-            self.duration = max(0.0, player.duration)
+            
+            // Compute real duration from PCM samples if player reports 0.0
+            let pcmBytes = max(0, cleanData.count - 44)
+            let computedDuration = Double(pcmBytes) / (48000.0 * 2.0)
+            let finalDuration = player.duration > 0.05 ? player.duration : computedDuration
+            
+            self.duration = max(0.1, finalDuration)
             self.currentTime = 0.0
             self.progress = 0.0
             self.errorMessage = nil
@@ -70,6 +88,9 @@ public final class AudioPlayerViewModel: NSObject, AVAudioPlayerDelegate {
     }
     
     public func togglePlayPause() {
+        if audioPlayer == nil, let url = currentURL {
+            loadAudio(from: url)
+        }
         guard let player = audioPlayer else { return }
         
         #if os(iOS)

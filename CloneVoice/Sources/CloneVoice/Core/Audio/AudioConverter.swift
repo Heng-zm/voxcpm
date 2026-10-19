@@ -55,12 +55,20 @@ public enum AudioConverter: Sendable {
     }
     
     /// Inspects audio data and ensures it is wrapped in a structurally correct 44-byte RIFF/WAV header.
-    /// - If the data is raw PCM (no RIFF header), a compliant 44-byte header is prepended.
-    /// - If the data already contains a RIFF/WAV header, it locates the "data" sub-chunk and verifies
-    ///   the subchunk2Size matches the actual payload. If subchunk2Size is 0 or corrupt, it repairs
-    ///   the data chunk size and RIFF size in-place so AVAudioPlayer can accurately determine duration and play.
+    /// Strips any non-standard trailing chunks (such as proprietary c2pa blocks) that crash CoreAudio / AVAudioPlayer.
     public static func ensureValidWAV(
         data: Data,
+        sampleRate: Int = 48000,
+        channels: Int = 1,
+        bitsPerSample: Int = 16
+    ) -> Data {
+        return extractCleanWAV(from: data, sampleRate: sampleRate, channels: channels, bitsPerSample: bitsPerSample)
+    }
+    
+    /// Extracts pure PCM audio data and returns a canonical 44-byte RIFF/WAV container.
+    /// Strips any non-standard trailing chunks (such as proprietary c2pa blocks) that crash CoreAudio / AVAudioPlayer.
+    public static func extractCleanWAV(
+        from data: Data,
         sampleRate: Int = 48000,
         channels: Int = 1,
         bitsPerSample: Int = 16
@@ -69,39 +77,32 @@ public enum AudioConverter: Sendable {
             return makeWAVHeader(dataLength: data.count, sampleRate: sampleRate, channels: channels, bitsPerSample: bitsPerSample) + data
         }
         
-        var fixedData = data
         let dataTag = Data([0x64, 0x61, 0x74, 0x61]) // "data"
         let searchRange = 12..<min(data.count, 128)
         
-        if let range = fixedData.range(of: dataTag, in: searchRange) {
-            let sizeOffset = range.upperBound
-            if sizeOffset + 4 <= fixedData.count {
-                let currentDataSize = fixedData.subdata(in: sizeOffset..<sizeOffset + 4).withUnsafeBytes { $0.load(as: UInt32.self) }
-                let pcmStart = sizeOffset + 4
-                
-                // Account for optional C2PA manifest subchunk appended after PCM
-                let c2paTag = Data([0x63, 0x32, 0x70, 0x61]) // "c2pa"
-                let pcmEnd: Int
-                if let c2paRange = fixedData.range(of: c2paTag, in: pcmStart..<fixedData.count) {
-                    pcmEnd = c2paRange.lowerBound
-                } else {
-                    pcmEnd = fixedData.count
-                }
-                
-                let actualPCMLength = max(0, pcmEnd - pcmStart)
-                
-                // If subchunk2Size is 0, corrupt, or significantly divergent from actual PCM data length:
-                if currentDataSize == 0 || currentDataSize > UInt32(fixedData.count) || (currentDataSize < UInt32(actualPCMLength) && actualPCMLength > 0) {
-                    var newSize = UInt32(actualPCMLength).littleEndian
-                    fixedData.replaceSubrange(sizeOffset..<sizeOffset + 4, with: Data(bytes: &newSize, count: 4))
-                    
-                    var newRiffSize = UInt32(fixedData.count - 8).littleEndian
-                    fixedData.replaceSubrange(4..<8, with: Data(bytes: &newRiffSize, count: 4))
-                }
-            }
+        guard let range = data.range(of: dataTag, in: searchRange) else {
+            let pcm = data.dropFirst(44)
+            return makeWAVHeader(dataLength: pcm.count, sampleRate: sampleRate, channels: channels, bitsPerSample: bitsPerSample) + pcm
         }
         
-        return fixedData
+        let sizeOffset = range.upperBound
+        guard sizeOffset + 4 <= data.count else {
+            let pcm = data.dropFirst(44)
+            return makeWAVHeader(dataLength: pcm.count, sampleRate: sampleRate, channels: channels, bitsPerSample: bitsPerSample) + pcm
+        }
+        
+        let pcmStart = sizeOffset + 4
+        let c2paTag = Data([0x63, 0x32, 0x70, 0x61]) // "c2pa"
+        let pcmEnd: Int
+        if let c2paRange = data.range(of: c2paTag, in: pcmStart..<data.count) {
+            pcmEnd = c2paRange.lowerBound
+        } else {
+            pcmEnd = data.count
+        }
+        
+        let pcmBytes = data.subdata(in: pcmStart..<pcmEnd)
+        let header = makeWAVHeader(dataLength: pcmBytes.count, sampleRate: sampleRate, channels: channels, bitsPerSample: bitsPerSample)
+        return header + pcmBytes
     }
     
     /// Generates a valid 48kHz 16-bit mono WAV audio sample with rich vocal harmonics and gentle vibrato.

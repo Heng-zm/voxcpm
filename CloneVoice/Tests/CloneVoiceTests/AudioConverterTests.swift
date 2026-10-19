@@ -62,4 +62,15 @@ struct AudioConverterTests {
         #expect(starter.count == 44 + (48000 * 2))
         #expect(AudioConverter.isValidWAV(data: starter))
     }
+    
+    @Test("extractCleanWAV strips trailing non-standard chunks and returns pure WAV")
+    func testExtractCleanWAVStripsTrailingChunks() {
+        let pcm = Data(repeating: 0x2A, count: 4800)
+        let clean = AudioConverter.makeWAVHeader(dataLength: pcm.count) + pcm
+        let dirty = clean + Data([0x63, 0x32, 0x70, 0x61, 0x10, 0x00, 0x00, 0x00]) + Data(repeating: 0x99, count: 16)
+        
+        let extracted = AudioConverter.extractCleanWAV(from: dirty)
+        #expect(extracted.count == 44 + 4800)
+        #expect(AudioConverter.isValidWAV(data: extracted))
+    }
 }

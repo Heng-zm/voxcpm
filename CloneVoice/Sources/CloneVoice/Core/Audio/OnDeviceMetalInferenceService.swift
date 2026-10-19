@@ -71,16 +71,21 @@ public final class OnDeviceMetalInferenceService: VoiceInferenceServiceProtocol,
             Task.detached {
                 do {
                     // Tokenize and break sentence into natural speech segments
-                    let words = text.split(whereSeparator: { $0.isWhitespace || $0.isPunctuation })
-                    let baseDurationPerWord: Double = max(0.22, min(0.48, 0.32 * (2.2 / max(1.0, cfgScale))))
+                    let rawWords = text.split(whereSeparator: { $0.isWhitespace || $0.isPunctuation })
+                    let words: [String] = rawWords.isEmpty ? [text] : rawWords.map { String($0) }
+                    
+                    // Enforce natural minimum utterance duration of at least 1.6s
+                    let minUtteranceDuration: Double = 1.6
+                    let naturalDurationPerWord = max(0.35, min(0.65, 0.42 * (2.2 / max(1.0, cfgScale))))
+                    let estimatedTotal = Double(words.count) * naturalDurationPerWord
+                    let totalUtteranceDuration = max(minUtteranceDuration, estimatedTotal)
+                    let baseDurationPerWord = totalUtteranceDuration / Double(words.count)
                     
                     var rng = SeededRandomNumberGenerator(seed: seed)
                     var currentPhase: Double = 0.0
                     
-                    for (index, word) in words.enumerated() {
-                        let wordStr = String(word)
-                        let charCount = max(1, wordStr.count)
-                        let segmentDuration = baseDurationPerWord * (1.0 + Double(charCount) * 0.05)
+                    for (index, wordStr) in words.enumerated() {
+                        let segmentDuration = baseDurationPerWord
                         let totalSamples = Int(segmentDuration * sampleRate)
                         
                         // Inflect pitch contour per word based on sentence position

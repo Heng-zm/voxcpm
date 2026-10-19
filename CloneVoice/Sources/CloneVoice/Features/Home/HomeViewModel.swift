@@ -233,8 +233,7 @@ public final class HomeViewModel {
             )
             
             // Ensure audio container has valid WAV header with correct data length
-            var finalWAV = AudioConverter.ensureValidWAV(data: receivedAudio)
-            finalWAV = watermarkService.injectManifest(into: finalWAV, manifestData: manifestData)
+            let finalWAV = AudioConverter.extractCleanWAV(from: receivedAudio)
             try finalWAV.write(to: outputURL, options: .atomic)
             
             let calculatedDuration = max(0.1, Double(max(0, finalWAV.count - 44)) / (48000.0 * 2.0))
