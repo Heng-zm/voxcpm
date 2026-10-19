@@ -27,6 +27,7 @@ def test_api_clonevoice_web_interface():
         assert "text/html" in response.headers.get("content-type", "")
         assert "Clone Voice" in response.text
         assert "VoxCPM2" in response.text
+        assert "WebGPU" in response.text
         assert "synthesis-text" in response.text
         print("  -> Passed clonevoice web interface test.")
 
