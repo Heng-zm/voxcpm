@@ -17,10 +17,12 @@ public actor AudioEngineActor: AudioRecordingProtocol {
             throw AudioEngineError.recordingFailed("Recording already active.")
         }
         
+        #if os(iOS)
         let session = AVAudioSession.sharedInstance()
         try session.setCategory(.playAndRecord, mode: .voiceChat, options: [.defaultToSpeaker, .allowBluetooth])
         try session.setPreferredSampleRate(48000.0)
         try session.setActive(true)
+        #endif
         
         let engine = AVAudioEngine()
         let input = engine.inputNode
@@ -99,7 +101,9 @@ public actor AudioEngineActor: AudioRecordingProtocol {
         self.isRecording = false
         self.startTime = nil
         
+        #if os(iOS)
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        #endif
         return duration
     }
     

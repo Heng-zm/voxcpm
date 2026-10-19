@@ -34,6 +34,7 @@ def verify_file_presence():
         "CloneVoice/Sources/CloneVoice/Core/Audio/AudioStreamPlayer.swift",
         "CloneVoice/Sources/CloneVoice/Core/Audio/AudioConverter.swift",
         "CloneVoice/Sources/CloneVoice/Core/DesignSystem/LiquidGlass/LiquidGlassModifier.swift",
+        "CloneVoice/Sources/CloneVoice/Core/DesignSystem/Tokens/PlatformCompatibility.swift",
         "CloneVoice/Sources/CloneVoice/Core/DesignSystem/Components/DynamicWaveformView.swift",
         "CloneVoice/Sources/CloneVoice/Features/Home/HomeConversationView.swift",
         "CloneVoice/Sources/CloneVoice/Features/VoiceLibrary/VoiceLibraryView.swift",

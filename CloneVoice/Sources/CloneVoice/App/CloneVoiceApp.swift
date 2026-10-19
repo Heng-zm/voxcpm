@@ -1,8 +1,9 @@
 import SwiftUI
 import SwiftData
 
-/// Main application entry point for Clone Voice (iOS 26.0+).
+#if !SWIFT_PACKAGE
 @main
+#endif
 public struct CloneVoiceApp: App {
     @State private var environment = AppEnvironment()
     @State private var router = AppRouter()

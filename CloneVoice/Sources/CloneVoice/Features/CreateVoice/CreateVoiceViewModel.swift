@@ -53,12 +53,14 @@ public final class CreateVoiceViewModel {
         self.isAudioReady = false
         
         do {
+            #if os(iOS)
             let session = AVAudioSession.sharedInstance()
             let permission = await session.requestRecordPermission()
             guard permission else {
                 errorMessage = "Microphone access denied. Please enable microphone permissions in Settings."
                 return
             }
+            #endif
             
             let stream = try await audioEngine.startRecording(to: fileURL)
             self.isRecording = true

@@ -64,10 +64,29 @@ jobs:
           echo "Resolving SwiftPM dependencies in CloneVoice..."
           swift package --package-path CloneVoice resolve
 
-      - name: Build CloneVoice Package
+      - name: Build CloneVoice Swift Package
         run: |
-          echo "Compiling CloneVoice with Swift 6 strict concurrency..."
+          echo "Compiling CloneVoice Swift package with Swift 6 strict concurrency..."
           swift build --package-path CloneVoice -c debug
+
+      - name: Build CloneVoice App for iOS Simulator
+        run: |
+          mkdir -p build/reports
+          echo "Compiling CloneVoice.xcodeproj for iOS Simulator (${{ steps.sim-discovery.outputs.SELECTED_SIM }})..."
+          xcodebuild build \
+            -project CloneVoice/CloneVoice.xcodeproj \
+            -scheme CloneVoice \
+            -destination "platform=iOS Simulator,name=${{ steps.sim-discovery.outputs.SELECTED_SIM }}" \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee build/reports/xcodebuild-simulator.log
+          
+          XCODEBUILD_EXIT=${PIPESTATUS[0]}
+          if [ $XCODEBUILD_EXIT -ne 0 ]; then
+            echo "::error::xcodebuild simulator build failed with exit code $XCODEBUILD_EXIT"
+            exit $XCODEBUILD_EXIT
+          fi
 
       - name: Run Swift Testing & Unit Tests
         id: run-tests

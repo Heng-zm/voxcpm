@@ -116,7 +116,9 @@ public struct SynthesisSettingsSheet: View {
                                 )
                                 .textFieldStyle(.plain)
                                 .font(.system(size: 14, design: .monospaced))
+                                #if os(iOS)
                                 .keyboardType(.numberPad)
+                                #endif
                                 .padding(10)
                                 .background(Color.white.opacity(0.08))
                                 .clipShape(RoundedRectangle(cornerRadius: 8))

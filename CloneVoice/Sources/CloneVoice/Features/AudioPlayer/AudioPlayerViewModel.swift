@@ -25,9 +25,11 @@ public final class AudioPlayerViewModel: NSObject, AVAudioPlayerDelegate {
         self.currentURL = url
         
         do {
+            #if os(iOS)
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.playback, mode: .default, options: [])
             try session.setActive(true)
+            #endif
             
             let player = try AVAudioPlayer(contentsOf: url)
             player.delegate = self

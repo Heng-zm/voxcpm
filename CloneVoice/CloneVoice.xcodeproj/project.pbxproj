@@ -21,6 +21,7 @@
 		1FD0CB844E4057CA8DBDF6D3 /* LiquidGlassModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D33D1E5FFCE5171A8634A44 /* LiquidGlassModifier.swift */; };
 		637515E319EA5B28BB741D99 /* DesignTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A4409AB74CB57F5A5C195CB /* DesignTokens.swift */; };
 		DD04170AF908529BA46E826E /* HapticFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A565436FE9C51739ABBDAEA /* HapticFeedback.swift */; };
+		9693770206F75270AF10976F /* PlatformCompatibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E03D50FDFA458C1A79B8E4E /* PlatformCompatibility.swift */; };
 		C7A70BBFC511560FA062E24E /* BiometricAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCF5ED52EB3C50E9A4364F33 /* BiometricAuthService.swift */; };
 		4D80DF0593855AD7B94F4D6B /* C2PAWatermarkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5156D6B479965816891A4BE0 /* C2PAWatermarkService.swift */; };
 		12A4527F35A357F78E82811B /* EphemeralStorageCleaner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44F8027E6FAD5CFC8E1A2DFE /* EphemeralStorageCleaner.swift */; };
@@ -83,6 +84,7 @@
 		9D33D1E5FFCE5171A8634A44 /* LiquidGlassModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/CloneVoice/Core/DesignSystem/LiquidGlass/LiquidGlassModifier.swift"; sourceTree = "<group>"; };
 		2A4409AB74CB57F5A5C195CB /* DesignTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/CloneVoice/Core/DesignSystem/Tokens/DesignTokens.swift"; sourceTree = "<group>"; };
 		9A565436FE9C51739ABBDAEA /* HapticFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/CloneVoice/Core/DesignSystem/Tokens/HapticFeedback.swift"; sourceTree = "<group>"; };
+		9E03D50FDFA458C1A79B8E4E /* PlatformCompatibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/CloneVoice/Core/DesignSystem/Tokens/PlatformCompatibility.swift"; sourceTree = "<group>"; };
 		CCF5ED52EB3C50E9A4364F33 /* BiometricAuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/CloneVoice/Core/Security/BiometricAuthService.swift"; sourceTree = "<group>"; };
 		5156D6B479965816891A4BE0 /* C2PAWatermarkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/CloneVoice/Core/Security/C2PAWatermarkService.swift"; sourceTree = "<group>"; };
 		44F8027E6FAD5CFC8E1A2DFE /* EphemeralStorageCleaner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/CloneVoice/Core/Security/EphemeralStorageCleaner.swift"; sourceTree = "<group>"; };
@@ -155,6 +157,7 @@
 				9D33D1E5FFCE5171A8634A44 /* LiquidGlassModifier.swift */,
 				2A4409AB74CB57F5A5C195CB /* DesignTokens.swift */,
 				9A565436FE9C51739ABBDAEA /* HapticFeedback.swift */,
+				9E03D50FDFA458C1A79B8E4E /* PlatformCompatibility.swift */,
 				CCF5ED52EB3C50E9A4364F33 /* BiometricAuthService.swift */,
 				5156D6B479965816891A4BE0 /* C2PAWatermarkService.swift */,
 				44F8027E6FAD5CFC8E1A2DFE /* EphemeralStorageCleaner.swift */,
@@ -292,6 +295,7 @@
 				1FD0CB844E4057CA8DBDF6D3 /* LiquidGlassModifier.swift in Sources */,
 				637515E319EA5B28BB741D99 /* DesignTokens.swift in Sources */,
 				DD04170AF908529BA46E826E /* HapticFeedback.swift in Sources */,
+				9693770206F75270AF10976F /* PlatformCompatibility.swift in Sources */,
 				C7A70BBFC511560FA062E24E /* BiometricAuthService.swift in Sources */,
 				4D80DF0593855AD7B94F4D6B /* C2PAWatermarkService.swift in Sources */,
 				12A4527F35A357F78E82811B /* EphemeralStorageCleaner.swift in Sources */,
