@@ -142,6 +142,9 @@ public actor SwiftDataUtteranceRepository: UtteranceRepositoryProtocol {
             duration: utterance.duration,
             c2paManifestDigest: utterance.c2paManifestDigest,
             latencySeconds: utterance.latencySeconds,
+            modelIdentifier: utterance.modelIdentifier,
+            status: utterance.status,
+            errorMessage: utterance.errorMessage,
             settingsJSON: settingsJSON
         )
         

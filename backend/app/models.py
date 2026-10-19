@@ -2,11 +2,10 @@ from pydantic import BaseModel, Field
 from typing import Optional
 
 class SynthesisSettingsModel(BaseModel):
-    cfg_scale: float = Field(default=2.0, ge=1.0, le=5.0)
-    timesteps: int = Field(default=10, ge=5, le=30)
-    emotion_instruction: Optional[str] = None
-    speed_multiplier: float = Field(default=1.0, ge=0.5, le=2.0)
-    watermark_enabled: bool = True
+    cfg_value: float = Field(default=2.0, ge=1.0, le=3.0)
+    inference_timesteps: int = Field(default=10, ge=4, le=30)
+    denoise: bool = True
+    seed: Optional[int] = None
     zero_retention: bool = True
 
 class HealthResponse(BaseModel):

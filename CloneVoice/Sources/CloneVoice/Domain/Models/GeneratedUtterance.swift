@@ -1,17 +1,27 @@
 import Foundation
 
-/// Represents a speech utterance synthesized by VoxCPM2 from a VoiceProfile.
+public enum GenerationStatus: String, Sendable, Codable, Equatable {
+    case queued
+    case generating
+    case completed
+    case failed
+}
+
+/// Represents a speech utterance synthesized by VoxCPM2 from an enrolled VoiceProfile.
 public struct GeneratedUtterance: Identifiable, Sendable, Equatable, Codable {
     public let id: UUID
     public let profileId: UUID
     public let profileName: String
     public let text: String
     public let createdAt: Date
-    public let audioFilename: String
-    public let duration: TimeInterval
-    public let c2paManifestDigest: Data?
-    public let latencySeconds: Double
-    public let settings: SynthesisSettings
+    public var audioFilename: String
+    public var duration: TimeInterval
+    public var c2paManifestDigest: Data?
+    public var latencySeconds: Double
+    public var modelIdentifier: String
+    public var settings: SynthesisSettings
+    public var status: GenerationStatus
+    public var errorMessage: String?
     
     public init(
         id: UUID = UUID(),
@@ -23,7 +33,10 @@ public struct GeneratedUtterance: Identifiable, Sendable, Equatable, Codable {
         duration: TimeInterval,
         c2paManifestDigest: Data? = nil,
         latencySeconds: Double,
-        settings: SynthesisSettings
+        modelIdentifier: String = "OpenBMB/VoxCPM2",
+        settings: SynthesisSettings = .standard,
+        status: GenerationStatus = .completed,
+        errorMessage: String? = nil
     ) {
         self.id = id
         self.profileId = profileId
@@ -34,6 +47,9 @@ public struct GeneratedUtterance: Identifiable, Sendable, Equatable, Codable {
         self.duration = duration
         self.c2paManifestDigest = c2paManifestDigest
         self.latencySeconds = latencySeconds
+        self.modelIdentifier = modelIdentifier
         self.settings = settings
+        self.status = status
+        self.errorMessage = errorMessage
     }
 }

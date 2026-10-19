@@ -8,33 +8,34 @@ struct SynthesisSettingsTests {
     @Test("Settings parameters clamp out-of-range values safely")
     func testBoundaryClamping() {
         let extremeSettings = SynthesisSettings(
-            cfgScale: 10.0,
-            timesteps: 100,
-            speedMultiplier: 5.0
+            cfgValue: 10.0,
+            inferenceTimesteps: 100,
+            denoise: true,
+            seed: 42
         )
         
-        #expect(extremeSettings.cfgScale == 5.0)
-        #expect(extremeSettings.timesteps == 30)
-        #expect(extremeSettings.speedMultiplier == 2.0)
+        #expect(extremeSettings.cfgValue == 3.0)
+        #expect(extremeSettings.inferenceTimesteps == 30)
+        #expect(extremeSettings.denoise == true)
+        #expect(extremeSettings.seed == 42)
     }
     
-    @Test("Standard presets contain expected production defaults")
+    @Test("Standard presets contain expected verified VoxCPM2 production defaults")
     func testStandardPreset() {
         let standard = SynthesisSettings.standard
-        #expect(standard.cfgScale == 2.0)
-        #expect(standard.timesteps == 10)
-        #expect(standard.watermarkEnabled == true)
+        #expect(standard.cfgValue == 2.0)
+        #expect(standard.inferenceTimesteps == 10)
+        #expect(standard.denoise == true)
         #expect(standard.zeroRetention == true)
     }
     
-    @Test("JSON roundtrip serialization preserves all fields")
+    @Test("JSON roundtrip serialization preserves all verified VoxCPM2 fields")
     func testSerializationRoundtrip() throws {
         let original = SynthesisSettings(
-            cfgScale: 2.8,
-            timesteps: 18,
-            emotionInstruction: "Reflective and resonant",
-            speedMultiplier: 1.1,
-            watermarkEnabled: true,
+            cfgValue: 2.4,
+            inferenceTimesteps: 16,
+            denoise: true,
+            seed: 12345,
             zeroRetention: true
         )
         

@@ -114,9 +114,7 @@ public final class SynthesisViewModel {
             }
             
             // Inject C2PA provenance into the WAV container
-            if settings.watermarkEnabled {
-                finalWAV = watermarkService.injectManifest(into: finalWAV, manifestData: manifestData)
-            }
+            finalWAV = watermarkService.injectManifest(into: finalWAV, manifestData: manifestData)
             
             // Write to persistent storage
             try finalWAV.write(to: outputURL, options: .atomic)
@@ -130,7 +128,9 @@ public final class SynthesisViewModel {
                 duration: Double(finalWAV.count) / (48000.0 * 2.0),
                 c2paManifestDigest: manifestData,
                 latencySeconds: latency,
-                settings: settings
+                modelIdentifier: "OpenBMB/VoxCPM2",
+                settings: settings,
+                status: .completed
             )
             
             try await utteranceRepository.saveUtterance(utterance)

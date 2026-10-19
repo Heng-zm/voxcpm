@@ -41,7 +41,11 @@ async def test_streaming_engine():
     chunks = []
     async for chunk in engine.stream_cloned_speech(
         text="Hello world from Clone Voice test suite.",
-        reference_audio_bytes=b"dummy-ref-audio"
+        reference_audio_bytes=b"dummy-ref-audio",
+        cfg_value=2.0,
+        inference_timesteps=10,
+        denoise=True,
+        seed=42
     ):
         chunks.append(chunk)
         if len(chunks) >= 3:

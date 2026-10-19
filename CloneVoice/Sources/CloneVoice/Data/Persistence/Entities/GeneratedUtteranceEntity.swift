@@ -12,6 +12,9 @@ public final class GeneratedUtteranceEntity {
     public var duration: Double
     public var c2paManifestDigest: Data?
     public var latencySeconds: Double
+    public var modelIdentifier: String
+    public var statusRaw: String
+    public var errorMessage: String?
     public var settingsJSON: String
     
     public var profile: VoiceProfileEntity?
@@ -26,6 +29,9 @@ public final class GeneratedUtteranceEntity {
         duration: Double,
         c2paManifestDigest: Data? = nil,
         latencySeconds: Double,
+        modelIdentifier: String = "OpenBMB/VoxCPM2",
+        status: GenerationStatus = .completed,
+        errorMessage: String? = nil,
         settingsJSON: String
     ) {
         self.id = id
@@ -37,6 +43,9 @@ public final class GeneratedUtteranceEntity {
         self.duration = duration
         self.c2paManifestDigest = c2paManifestDigest
         self.latencySeconds = latencySeconds
+        self.modelIdentifier = modelIdentifier
+        self.statusRaw = status.rawValue
+        self.errorMessage = errorMessage
         self.settingsJSON = settingsJSON
     }
     
@@ -49,6 +58,8 @@ public final class GeneratedUtteranceEntity {
             decodedSettings = .standard
         }
         
+        let status = GenerationStatus(rawValue: statusRaw) ?? .completed
+        
         return GeneratedUtterance(
             id: id,
             profileId: profileId,
@@ -59,7 +70,10 @@ public final class GeneratedUtteranceEntity {
             duration: duration,
             c2paManifestDigest: c2paManifestDigest,
             latencySeconds: latencySeconds,
-            settings: decodedSettings
+            modelIdentifier: modelIdentifier,
+            settings: decodedSettings,
+            status: status,
+            errorMessage: errorMessage
         )
     }
 }

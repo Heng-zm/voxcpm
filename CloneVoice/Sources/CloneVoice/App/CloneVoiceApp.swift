@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-/// Main application entry point for Clone Voice.
+/// Main application entry point for Clone Voice (iOS 26.0+).
 @main
 public struct CloneVoiceApp: App {
     @State private var environment = AppEnvironment()
@@ -12,23 +12,29 @@ public struct CloneVoiceApp: App {
     public var body: some Scene {
         WindowGroup {
             TabView(selection: $router.selectedTab) {
-                VoiceDeckView()
+                HomeConversationView()
                     .tabItem {
-                        Label(AppTab.deck.rawValue, systemImage: AppTab.deck.iconName)
+                        Label(AppTab.home.rawValue, systemImage: AppTab.home.iconName)
                     }
-                    .tag(AppTab.deck)
+                    .tag(AppTab.home)
                 
-                SpeechGenerationStudioView()
-                    .tabItem {
-                        Label(AppTab.synthesis.rawValue, systemImage: AppTab.synthesis.iconName)
-                    }
-                    .tag(AppTab.synthesis)
-                
-                UtteranceLibraryView()
+                VoiceLibraryView()
                     .tabItem {
                         Label(AppTab.library.rawValue, systemImage: AppTab.library.iconName)
                     }
                     .tag(AppTab.library)
+                
+                SpeechGenerationStudioView()
+                    .tabItem {
+                        Label(AppTab.studio.rawValue, systemImage: AppTab.studio.iconName)
+                    }
+                    .tag(AppTab.studio)
+                
+                HistoryView()
+                    .tabItem {
+                        Label(AppTab.history.rawValue, systemImage: AppTab.history.iconName)
+                    }
+                    .tag(AppTab.history)
                 
                 SettingsView()
                     .tabItem {

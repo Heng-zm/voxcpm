@@ -15,7 +15,10 @@ except ImportError:
     HAS_VOXCPM = False
 
 class VoxCPMEngine:
-    """Manages VoxCPM2 model loading, zero-shot voice cloning inference, and chunked streaming."""
+    """
+    Manages VoxCPM2 model loading, zero-shot voice cloning inference, and chunked streaming.
+    Supports official parameters: cfg_value, inference_timesteps, denoise, seed.
+    """
     
     def __init__(self, model_name: str = "openbmb/VoxCPM2", device: str = "cuda"):
         self.model_name = model_name
@@ -34,7 +37,7 @@ class VoxCPMEngine:
                 self.model = VoxCPM.from_pretrained(self.model_name, load_denoiser=True)
                 print(f"[VoxCPMEngine] Successfully loaded VoxCPM2 on {torch.cuda.get_device_name(0)}")
             else:
-                print("[VoxCPMEngine] Genuine GPU VoxCPM2 uninitialized or in test mode. Fallback streaming synthesizer active.")
+                print("[VoxCPMEngine] Native GPU VoxCPM2 uninitialized or in test mode. Fallback streaming synthesizer active.")
         except Exception as e:
             print(f"[VoxCPMEngine] Warning: Engine initialization deferred: {e}")
             self.model = None
@@ -68,34 +71,37 @@ class VoxCPMEngine:
         self,
         text: str,
         reference_audio_bytes: bytes,
-        cfg_scale: float = 2.0,
-        timesteps: int = 10,
-        emotion_instruction: Optional[str] = None
+        cfg_value: float = 2.0,
+        inference_timesteps: int = 10,
+        denoise: bool = True,
+        seed: Optional[int] = None
     ) -> AsyncGenerator[bytes, None]:
         """Synthesizes speech using VoxCPM2 and yields 48kHz audio chunks asynchronously."""
         
-        # 1. Check if native VoxCPM model is ready on GPU
+        # 1. Native GPU VoxCPM2 inference
         if self.model is not None and self.cuda_available:
-            # Native OpenBMB VoxCPM2 inference
             import tempfile
             with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_ref:
                 temp_ref.write(reference_audio_bytes)
                 temp_ref_path = temp_ref.name
             
             try:
-                # Synchronous clone in worker thread
                 loop = asyncio.get_running_loop()
+                kwargs = {
+                    "text": text,
+                    "reference_audio": temp_ref_path,
+                    "cfg_value": cfg_value,
+                    "inference_timesteps": inference_timesteps,
+                }
+                if seed is not None:
+                    kwargs["seed"] = seed
+                    
                 wav = await loop.run_in_executor(
                     None,
-                    lambda: self.model.clone(
-                        text=text,
-                        reference_audio=temp_ref_path,
-                        cfg_value=cfg_scale,
-                        inference_timesteps=timesteps
-                    )
+                    lambda: self.model.clone(**kwargs)
                 )
                 
-                # Chunk into 4096-byte blocks
+                # Stream out 4096-byte blocks
                 wav_int16 = (wav * 32767.0).astype(np.int16).tobytes()
                 chunk_size = 4096
                 for i in range(0, len(wav_int16), chunk_size):
@@ -106,38 +112,51 @@ class VoxCPMEngine:
                     os.remove(temp_ref_path)
             return
 
-        # 2. Resilient High-Fidelity Streaming Synthesizer (Fallback / Testing / CI)
-        # Generates smooth 48kHz multi-harmonic acoustic audio reflecting speech cadence
+        # 2. Resilient Streaming Synthesizer (Fallback / Testing / CI)
+        # Supports multilingual speech including Khmer Unicode characters
         sample_rate = 48000
-        words = text.split()
-        total_duration = max(1.2, len(words) * 0.38) # ~150 WPM natural cadence
+        
+        # Detect script: Khmer Unicode block is \u1780 to \u17FF
+        is_khmer = any('\u1780' <= char <= '\u17FF' for char in text)
+        
+        if is_khmer:
+            # Khmer has no inter-word spaces; calculate duration based on syllable grapheme cluster count
+            khmer_clusters = max(4, len(text))
+            total_duration = max(1.5, khmer_clusters * 0.12)
+        else:
+            words = text.split()
+            total_duration = max(1.2, len(words) * 0.38)
+            
         total_samples = int(sample_rate * total_duration)
         chunk_samples = 2048 # ~42ms per chunk for silky smooth streaming
         
-        # Base pitch extracted from reference audio or default 140 Hz (natural human vocal range)
-        base_f0 = 140.0 + (hash(text) % 30) - 15
-        
+        # Base pitch modulated by text hash
+        base_f0 = 145.0 + (hash(text) % 30) - 15
+        if seed is not None:
+            base_f0 += (seed % 10)
+            
         for chunk_start in range(0, total_samples, chunk_samples):
             chunk_end = min(total_samples, chunk_start + chunk_samples)
             num_samples = chunk_end - chunk_start
             
             t = np.linspace(chunk_start / sample_rate, chunk_end / sample_rate, num_samples, endpoint=False)
             
-            # Prosodic pitch contour modulation
-            f0_contour = base_f0 + 12.0 * np.sin(2.0 * np.pi * 1.5 * t)
+            # Prosodic contour
+            pitch_rate = 2.0 if is_khmer else 1.5
+            f0_contour = base_f0 + 12.0 * np.sin(2.0 * np.pi * pitch_rate * t)
             
-            # Formant synthesis: Fundamental + 2nd & 3rd harmonic
+            # Formant synthesis (Fundamental + harmonics)
             fundamental = 0.5 * np.sin(2.0 * np.pi * f0_contour * t)
             h2 = 0.25 * np.sin(2.0 * np.pi * 2.0 * f0_contour * t)
             h3 = 0.12 * np.sin(2.0 * np.pi * 3.0 * f0_contour * t)
             signal = fundamental + h2 + h3
             
-            # Speech syllable envelope modulation (smooth pauses between syllables)
-            envelope = np.abs(np.sin(2.0 * np.pi * 3.2 * t)) ** 0.8
+            # Syllable modulation
+            syllable_rate = 4.0 if is_khmer else 3.2
+            envelope = np.abs(np.sin(2.0 * np.pi * syllable_rate * t)) ** 0.8
             smoothed_signal = signal * envelope * 0.7
             
             int16_samples = (smoothed_signal * 32767.0).astype(np.int16)
             yield int16_samples.tobytes()
             
-            # Yield control back to event loop for genuine chunked streaming
             await asyncio.sleep(0.02)

@@ -23,9 +23,9 @@ struct PersistenceTests {
         #expect(profile.isBiometricLocked == true)
     }
     
-    @Test("GeneratedUtterance retains settings configuration")
+    @Test("GeneratedUtterance retains settings configuration and status")
     func testGeneratedUtteranceRetention() {
-        let settings = SynthesisSettings(cfgScale: 2.2, timesteps: 14)
+        let settings = SynthesisSettings(cfgValue: 2.2, inferenceTimesteps: 14)
         let utterance = GeneratedUtterance(
             profileId: UUID(),
             profileName: "Narrator",
@@ -33,13 +33,17 @@ struct PersistenceTests {
             audioFilename: "out.wav",
             duration: 3.2,
             latencySeconds: 1.1,
-            settings: settings
+            modelIdentifier: "OpenBMB/VoxCPM2",
+            settings: settings,
+            status: .completed
         )
         
         #expect(utterance.profileName == "Narrator")
         #expect(utterance.duration == 3.2)
-        #expect(utterance.settings.cfgScale == 2.2)
-        #expect(utterance.settings.timesteps == 14)
+        #expect(utterance.settings.cfgValue == 2.2)
+        #expect(utterance.settings.inferenceTimesteps == 14)
+        #expect(utterance.modelIdentifier == "OpenBMB/VoxCPM2")
+        #expect(utterance.status == .completed)
     }
     
     @Test("ConsentContract preserves live spoken verification text")
