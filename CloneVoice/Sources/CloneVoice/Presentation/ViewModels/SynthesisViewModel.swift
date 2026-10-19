@@ -15,20 +15,20 @@ public final class SynthesisViewModel {
     public var errorMessage: String?
     public var latestUtterance: GeneratedUtterance?
     
-    private let inferenceClient: VoxCPMInferenceClient
+    private let inferenceService: any VoiceInferenceServiceProtocol
     private let utteranceRepository: any UtteranceRepositoryProtocol
     private let streamPlayer: AudioStreamPlayer
     private let watermarkService: C2PAWatermarkService
     private let biometricAuth: BiometricAuthServiceProtocol
     
     public init(
-        inferenceClient: VoxCPMInferenceClient,
+        inferenceService: any VoiceInferenceServiceProtocol,
         utteranceRepository: any UtteranceRepositoryProtocol,
         streamPlayer: AudioStreamPlayer,
         watermarkService: C2PAWatermarkService = .shared,
         biometricAuth: BiometricAuthServiceProtocol = BiometricAuthService.shared
     ) {
-        self.inferenceClient = inferenceClient
+        self.inferenceService = inferenceService
         self.utteranceRepository = utteranceRepository
         self.streamPlayer = streamPlayer
         self.watermarkService = watermarkService
@@ -85,7 +85,7 @@ public final class SynthesisViewModel {
         let outputURL = docs.appendingPathComponent(outputFilename)
         
         do {
-            let stream = try await inferenceClient.generateSpeechStream(
+            let stream = try await inferenceService.generateSpeechStream(
                 profile: profile,
                 referenceAudioData: audioData,
                 text: trimmed,

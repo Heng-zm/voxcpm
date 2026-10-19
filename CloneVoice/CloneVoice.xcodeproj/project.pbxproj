@@ -12,6 +12,7 @@
 		228DEFBC635357EFA7B21E83 /* AudioConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17B88D3B4AE05F6FB399946F /* AudioConverter.swift */; };
 		13EB71DBABEA5FF6BE9815A5 /* AudioEngineActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DEC58B187BD5E1B899EF583 /* AudioEngineActor.swift */; };
 		469A6BC3BBD354A6B8CA817A /* AudioStreamPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5363182D9BE54B2818048BC /* AudioStreamPlayer.swift */; };
+		E1A8B9C0D1E2F3A4B5C6D7E8 /* OnDeviceMetalInferenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E6F7A8B9C0D1E2 /* OnDeviceMetalInferenceService.swift */; };
 		D93A8131A0685EBC8848235B /* BiometricLockBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BA2CFF0B2A05A92A93EA4F3 /* BiometricLockBadge.swift */; };
 		F3EB94640E485BECB6BA76ED /* C2PAProvenanceBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0BFCB8DFCA5596B4F77700 /* C2PAProvenanceBadge.swift */; };
 		9BC9715A565C544589EFECDC /* DynamicWaveformView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B7E6C2E914B5170A43D82E2 /* DynamicWaveformView.swift */; };
@@ -75,6 +76,7 @@
 		17B88D3B4AE05F6FB399946F /* AudioConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/CloneVoice/Core/Audio/AudioConverter.swift"; sourceTree = "<group>"; };
 		2DEC58B187BD5E1B899EF583 /* AudioEngineActor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/CloneVoice/Core/Audio/AudioEngineActor.swift"; sourceTree = "<group>"; };
 		F5363182D9BE54B2818048BC /* AudioStreamPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/CloneVoice/Core/Audio/AudioStreamPlayer.swift"; sourceTree = "<group>"; };
+		F1A2B3C4D5E6F7A8B9C0D1E2 /* OnDeviceMetalInferenceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/CloneVoice/Core/Audio/OnDeviceMetalInferenceService.swift"; sourceTree = "<group>"; };
 		0BA2CFF0B2A05A92A93EA4F3 /* BiometricLockBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/CloneVoice/Core/DesignSystem/Components/BiometricLockBadge.swift"; sourceTree = "<group>"; };
 		DD0BFCB8DFCA5596B4F77700 /* C2PAProvenanceBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/CloneVoice/Core/DesignSystem/Components/C2PAProvenanceBadge.swift"; sourceTree = "<group>"; };
 		3B7E6C2E914B5170A43D82E2 /* DynamicWaveformView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/CloneVoice/Core/DesignSystem/Components/DynamicWaveformView.swift"; sourceTree = "<group>"; };
@@ -148,6 +150,7 @@
 				17B88D3B4AE05F6FB399946F /* AudioConverter.swift */,
 				2DEC58B187BD5E1B899EF583 /* AudioEngineActor.swift */,
 				F5363182D9BE54B2818048BC /* AudioStreamPlayer.swift */,
+				F1A2B3C4D5E6F7A8B9C0D1E2 /* OnDeviceMetalInferenceService.swift */,
 				0BA2CFF0B2A05A92A93EA4F3 /* BiometricLockBadge.swift */,
 				DD0BFCB8DFCA5596B4F77700 /* C2PAProvenanceBadge.swift */,
 				3B7E6C2E914B5170A43D82E2 /* DynamicWaveformView.swift */,
@@ -286,6 +289,7 @@
 				228DEFBC635357EFA7B21E83 /* AudioConverter.swift in Sources */,
 				13EB71DBABEA5FF6BE9815A5 /* AudioEngineActor.swift in Sources */,
 				469A6BC3BBD354A6B8CA817A /* AudioStreamPlayer.swift in Sources */,
+				E1A8B9C0D1E2F3A4B5C6D7E8 /* OnDeviceMetalInferenceService.swift in Sources */,
 				D93A8131A0685EBC8848235B /* BiometricLockBadge.swift in Sources */,
 				F3EB94640E485BECB6BA76ED /* C2PAProvenanceBadge.swift in Sources */,
 				9BC9715A565C544589EFECDC /* DynamicWaveformView.swift in Sources */,
@@ -407,7 +411,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Clone Voice";
@@ -420,7 +424,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.1;
+				MARKETING_VERSION = 1.0.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.clonevoice.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -434,7 +438,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Clone Voice";
@@ -447,7 +451,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.1;
+				MARKETING_VERSION = 1.0.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.clonevoice.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;

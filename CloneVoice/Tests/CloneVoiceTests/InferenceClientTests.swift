@@ -18,10 +18,23 @@ struct InferenceClientTests {
         #expect(client.baseURL == customURL)
     }
     
-    @Test("AppEnvironment initializes with Render endpoint by default")
+    @Test("AppEnvironment defaults to On-Device Apple GPU execution target")
     @MainActor
-    func testAppEnvironmentDefaultURL() {
+    func testAppEnvironmentDefaultExecutionTarget() {
         let env = AppEnvironment(inMemory: true)
-        #expect(env.inferenceClient.baseURL.absoluteString == "https://voxcpm-xsp6.onrender.com")
+        #expect(env.executionTarget == .onDeviceGPU)
+    }
+    
+    @Test("OnDeviceMetalInferenceService reports ready hardware status")
+    func testOnDeviceMetalServiceStatus() async throws {
+        let service = OnDeviceMetalInferenceService()
+        let status = try await service.checkHealth()
+        switch status {
+        case .ready(let gpuModel, let vram):
+            #expect(!gpuModel.isEmpty)
+            #expect(vram > 0)
+        default:
+            Issue.record("Expected on-device service to report ready status")
+        }
     }
 }

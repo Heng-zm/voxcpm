@@ -55,31 +55,74 @@ public struct SettingsView: View {
                     statusIndicator
                 }
                 
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("API ENDPOINT")
+                // Execution Target Selector
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("SYNTHESIS HARDWARE TARGET")
                         .font(.system(size: 11, weight: .bold, design: .rounded))
                         .foregroundColor(.secondary)
                     
-                    HStack {
-                        TextField("https://voxcpm-xsp6.onrender.com", text: $backendURLString)
-                            .textFieldStyle(.plain)
-                            .font(.system(size: 14, design: .monospaced))
+                    Picker("Target", selection: Bindable(env).executionTarget) {
+                        ForEach(InferenceExecutionTarget.allCases) { target in
+                            Text(target.rawValue).tag(target)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .onChange(of: env.executionTarget) { _, _ in
+                        Task {
+                            await checkHealth()
+                        }
+                    }
+                }
+                
+                if env.executionTarget == .onDeviceGPU {
+                    HStack(spacing: 10) {
+                        Image(systemName: "bolt.shield.fill")
+                            .font(.system(size: 20))
+                            .foregroundColor(DesignTokens.Colors.acousticCyan)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("Running on Device GPU (\(env.onDeviceService.deviceName))")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundColor(.primary)
+                            Text("100% On-Device execution. Audio never leaves your iPhone.")
+                                .font(.system(size: 11))
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(DesignTokens.Colors.acousticCyan.opacity(0.10))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 10)
+                            .strokeBorder(DesignTokens.Colors.acousticCyan.opacity(0.25), lineWidth: 1)
+                    }
+                } else {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("REMOTE API ENDPOINT")
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .foregroundColor(.secondary)
                         
-                        Button("Update") {
-                            if let url = URL(string: backendURLString) {
-                                env.inferenceClient.baseURL = url
-                                UserDefaults.standard.set(backendURLString, forKey: "custom_backend_url")
-                                Task {
-                                    await checkHealth()
+                        HStack {
+                            TextField("https://voxcpm-xsp6.onrender.com", text: $backendURLString)
+                                .textFieldStyle(.plain)
+                                .font(.system(size: 14, design: .monospaced))
+                            
+                            Button("Update") {
+                                if let url = URL(string: backendURLString) {
+                                    env.inferenceClient.baseURL = url
+                                    UserDefaults.standard.set(backendURLString, forKey: "custom_backend_url")
+                                    Task {
+                                        await checkHealth()
+                                    }
                                 }
                             }
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(DesignTokens.Colors.acousticCyan)
                         }
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(DesignTokens.Colors.acousticCyan)
+                        .padding(10)
+                        .background(Color.white.opacity(0.08))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
-                    .padding(10)
-                    .background(Color.white.opacity(0.08))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
                 
                 Button(action: {
@@ -220,7 +263,7 @@ public struct SettingsView: View {
     private func checkHealth() async {
         isCheckingHealth = true
         do {
-            backendStatus = try await env.inferenceClient.checkHealth()
+            backendStatus = try await env.activeInferenceService.checkHealth()
         } catch {
             backendStatus = .offline(reason: error.localizedDescription)
         }

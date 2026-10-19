@@ -56,7 +56,7 @@ public struct SpeechGenerationStudioView: View {
             .task {
                 if viewModel == nil {
                     viewModel = SynthesisViewModel(
-                        inferenceClient: env.inferenceClient,
+                        inferenceService: env.activeInferenceService,
                         utteranceRepository: env.utteranceRepository,
                         streamPlayer: env.streamPlayer,
                         watermarkService: env.watermarkService,

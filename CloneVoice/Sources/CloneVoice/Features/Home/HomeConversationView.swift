@@ -76,7 +76,7 @@ public struct HomeConversationView: View {
             .task {
                 if viewModel == nil {
                     viewModel = HomeViewModel(
-                        inferenceClient: env.inferenceClient,
+                        inferenceService: env.activeInferenceService,
                         profileRepository: env.profileRepository,
                         utteranceRepository: env.utteranceRepository,
                         watermarkService: env.watermarkService,
@@ -133,8 +133,24 @@ public struct HomeConversationView: View {
             
             Spacer()
             
-            // Cloud Backend Connection Badge
-            if let status = viewModel?.backendStatus {
+            // Engine Status Badge (On-Device Apple GPU vs Cloud)
+            if env.executionTarget == .onDeviceGPU {
+                HStack(spacing: 5) {
+                    Image(systemName: "bolt.fill")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundColor(DesignTokens.Colors.acousticCyan)
+                    Text("Device GPU")
+                        .font(.system(size: 11, weight: .semibold, design: .rounded))
+                        .foregroundColor(.primary)
+                }
+                .padding(.horizontal, 9)
+                .padding(.vertical, 4)
+                .background(DesignTokens.Colors.acousticCyan.opacity(0.12))
+                .clipShape(Capsule())
+                .overlay {
+                    Capsule().strokeBorder(DesignTokens.Colors.acousticCyan.opacity(0.3), lineWidth: 1)
+                }
+            } else if let status = viewModel?.backendStatus {
                 switch status {
                 case .ready:
                     HStack(spacing: 5) {

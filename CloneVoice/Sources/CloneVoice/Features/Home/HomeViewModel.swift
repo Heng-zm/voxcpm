@@ -45,20 +45,20 @@ public final class HomeViewModel {
     public var backendStatus: BackendStatus?
     public var isCheckingBackend: Bool = false
     
-    private let inferenceClient: VoxCPMInferenceClient
+    private let inferenceService: any VoiceInferenceServiceProtocol
     private let profileRepository: any VoiceProfileRepositoryProtocol
     private let utteranceRepository: any UtteranceRepositoryProtocol
     private let watermarkService: C2PAWatermarkService
     private let biometricAuth: BiometricAuthServiceProtocol
     
     public init(
-        inferenceClient: VoxCPMInferenceClient,
+        inferenceService: any VoiceInferenceServiceProtocol,
         profileRepository: any VoiceProfileRepositoryProtocol,
         utteranceRepository: any UtteranceRepositoryProtocol,
         watermarkService: C2PAWatermarkService = .shared,
         biometricAuth: BiometricAuthServiceProtocol = BiometricAuthService.shared
     ) {
-        self.inferenceClient = inferenceClient
+        self.inferenceService = inferenceService
         self.profileRepository = profileRepository
         self.utteranceRepository = utteranceRepository
         self.watermarkService = watermarkService
@@ -68,7 +68,7 @@ public final class HomeViewModel {
     public func checkBackendConnectivity() async {
         isCheckingBackend = true
         do {
-            self.backendStatus = try await inferenceClient.checkHealth()
+            self.backendStatus = try await inferenceService.checkHealth()
         } catch {
             self.backendStatus = .offline(reason: error.localizedDescription)
         }
@@ -211,7 +211,7 @@ public final class HomeViewModel {
         
         do {
             let settings = SynthesisSettings.standard
-            let stream = try await inferenceClient.generateSpeechStream(
+            let stream = try await inferenceService.generateSpeechStream(
                 profile: profile,
                 referenceAudioData: audioData,
                 text: trimmed,
