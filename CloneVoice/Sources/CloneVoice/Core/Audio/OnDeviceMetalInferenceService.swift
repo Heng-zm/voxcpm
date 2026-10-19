@@ -60,9 +60,9 @@ public final class OnDeviceMetalInferenceService: VoiceInferenceServiceProtocol,
     ) async throws -> AsyncThrowingStream<Data, Error> {
         let sampleRate = self.sampleRate
         let isDenoised = settings.denoise
-        let cfgScale = settings.cfgValue
+        let cfgScale = Double(settings.cfgValue)
         let steps = settings.inferenceTimesteps
-        let seed = settings.seed ?? UInt64(abs(text.hashValue))
+        let seed = settings.seed.map { UInt64(abs($0)) } ?? UInt64(abs(text.hashValue))
         
         // Analyze acoustic characteristics of reference audio sample
         let acousticProfile = extractAcousticSignature(from: referenceAudioData)
