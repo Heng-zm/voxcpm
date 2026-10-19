@@ -33,9 +33,9 @@ public struct DynamicWaveformView: View {
                         )
                     )
                     .frame(width: 4, height: height)
-                    .animation(DesignTokens.Animations.snappySpring, value: height)
             }
         }
+        .animation(.interpolatingSpring(stiffness: 320, damping: 26), value: level)
         .frame(height: 72)
         .padding(.vertical, 8)
         .onAppear {

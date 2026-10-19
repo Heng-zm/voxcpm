@@ -152,10 +152,15 @@ public final class HomeViewModel {
         let refURL = docs.appendingPathComponent(profile.referenceAudioFilename)
         
         let audioData: Data
-        if FileManager.default.fileExists(atPath: refURL.path), let data = try? Data(contentsOf: refURL) {
+        if FileManager.default.fileExists(atPath: refURL.path), let data = try? Data(contentsOf: refURL), !data.isEmpty {
             audioData = data
+        } else if !profile.referenceAudioFilename.isEmpty {
+            audioData = AudioConverter.makeWAVHeader(dataLength: 48000 * 2 * 3)
         } else {
-            audioData = AudioConverter.makeWAVHeader(dataLength: 48000 * 2 * 5)
+            errorMessage = "No reference voice sample found for '\(profile.name)'. Please record a voice sample."
+            conversation.removeAll { $0.id == pendingId }
+            isGenerating = false
+            return
         }
         
         var receivedAudio = Data()

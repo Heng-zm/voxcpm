@@ -18,6 +18,20 @@ public final class AudioPlayerViewModel: NSObject, AVAudioPlayerDelegate {
     
     public override init() {
         super.init()
+        #if os(iOS)
+        NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let info = notification.userInfo,
+                  let typeValue = info[AVAudioSessionInterruptionTypeKey] as? UInt,
+                  let type = AVAudioSession.InterruptionType(rawValue: typeValue) else { return }
+            if type == .began {
+                self?.pause()
+            }
+        }
+        #endif
     }
     
     public func loadAudio(from url: URL) {
@@ -63,8 +77,15 @@ public final class AudioPlayerViewModel: NSObject, AVAudioPlayerDelegate {
         }
     }
     
+    public func pause() {
+        guard let player = audioPlayer, player.isPlaying else { return }
+        player.pause()
+        self.isPlaying = false
+        stopTimer()
+    }
+    
     public func seek(to progress: Double) {
-        guard let player = audioPlayer else { return }
+        guard let player = audioPlayer, duration > 0, duration.isFinite else { return }
         let clamped = max(0.0, min(1.0, progress))
         let targetTime = clamped * duration
         player.currentTime = targetTime

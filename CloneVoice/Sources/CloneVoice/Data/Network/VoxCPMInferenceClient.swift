@@ -96,26 +96,37 @@ public final class VoxCPMInferenceClient: VoiceInferenceServiceProtocol, @unchec
         }
         
         return AsyncThrowingStream { continuation in
-            Task {
+            let task = Task {
                 do {
                     var buffer = Data()
+                    buffer.reserveCapacity(4096)
                     let chunkSize = 4096
                     
                     for try await byte in bytes {
+                        if Task.isCancelled { break }
                         buffer.append(byte)
                         if buffer.count >= chunkSize {
                             continuation.yield(buffer)
-                            buffer.removeAll(keepingCapacity: true)
+                            buffer = Data()
+                            buffer.reserveCapacity(chunkSize)
                         }
                     }
                     
-                    if !buffer.isEmpty {
+                    if !buffer.isEmpty && !Task.isCancelled {
                         continuation.yield(buffer)
                     }
                     continuation.finish()
                 } catch {
-                    continuation.finish(throwing: error)
+                    if !Task.isCancelled {
+                        continuation.finish(throwing: error)
+                    } else {
+                        continuation.finish()
+                    }
                 }
+            }
+            
+            continuation.onTermination = { @Sendable _ in
+                task.cancel()
             }
         }
     }

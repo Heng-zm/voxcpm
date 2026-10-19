@@ -7,6 +7,8 @@ public actor AudioStreamPlayer: AudioPlaybackProtocol {
     private var playerNode: AVAudioPlayerNode?
     private var isPlaying = false
     private var tempStreamingFile: URL?
+    private var tempFileHandle: FileHandle?
+    private var currentContinuation: AsyncStream<Float>.Continuation?
     
     public init() {}
     
@@ -43,6 +45,7 @@ public actor AudioStreamPlayer: AudioPlaybackProtocol {
         guard let continuation = continuationRef else {
             return stream
         }
+        self.currentContinuation = continuation
         
         engine.mainMixerNode.installTap(onBus: 0, bufferSize: 1024, format: format) { buffer, _ in
             guard let channelData = buffer.floatChannelData?[0] else { return }
@@ -66,17 +69,18 @@ public actor AudioStreamPlayer: AudioPlaybackProtocol {
     }
     
     public func enqueueChunk(_ chunk: Data) throws {
-        // Appends incoming streaming bytes to an ephemeral memory/disk buffer for continuous playback
+        // Appends incoming streaming bytes to an ephemeral buffer for continuous playback
         if tempStreamingFile == nil {
             let tempDir = FileManager.default.temporaryDirectory
-            tempStreamingFile = tempDir.appendingPathComponent("stream_\(UUID().uuidString).pcm")
-            FileManager.default.createFile(atPath: tempStreamingFile!.path, contents: nil)
+            let fileURL = tempDir.appendingPathComponent("stream_\(UUID().uuidString).pcm")
+            FileManager.default.createFile(atPath: fileURL.path, contents: nil)
+            self.tempStreamingFile = fileURL
+            self.tempFileHandle = try? FileHandle(forWritingTo: fileURL)
         }
         
-        if let url = tempStreamingFile, let handle = try? FileHandle(forWritingTo: url) {
-            handle.seekToEndOfFile()
-            handle.write(chunk)
-            try? handle.close()
+        if let handle = tempFileHandle {
+            try? handle.seekToEnd()
+            try? handle.write(contentsOf: chunk)
         }
     }
     
@@ -85,6 +89,14 @@ public actor AudioStreamPlayer: AudioPlaybackProtocol {
             engine.mainMixerNode.removeTap(onBus: 0)
             playerNode?.stop()
             engine.stop()
+        }
+        
+        currentContinuation?.finish()
+        currentContinuation = nil
+        
+        if let handle = tempFileHandle {
+            try? handle.close()
+            tempFileHandle = nil
         }
         
         if let temp = tempStreamingFile {

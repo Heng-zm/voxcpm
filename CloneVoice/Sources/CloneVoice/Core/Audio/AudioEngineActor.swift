@@ -9,6 +9,7 @@ public actor AudioEngineActor: AudioRecordingProtocol {
     private var recordedURL: URL?
     private var startTime: Date?
     private(set) var isRecording = false
+    private var currentContinuation: AsyncStream<Float>.Continuation?
     
     public init() {}
     
@@ -62,6 +63,7 @@ public actor AudioEngineActor: AudioRecordingProtocol {
         guard let continuation = continuationRef else {
             throw AudioEngineError.recordingFailed("Failed to initialize audio stream continuation.")
         }
+        self.currentContinuation = continuation
         
         input.installTap(onBus: 0, bufferSize: 1024, format: inputFormat) { buffer, _ in
             // Write buffer to disk
@@ -102,6 +104,9 @@ public actor AudioEngineActor: AudioRecordingProtocol {
         
         inputNode?.removeTap(onBus: 0)
         audioEngine?.stop()
+        
+        currentContinuation?.finish()
+        currentContinuation = nil
         
         let duration = startTime.map { Date().timeIntervalSince($0) } ?? 0
         

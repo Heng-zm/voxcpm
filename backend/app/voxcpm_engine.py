@@ -110,6 +110,12 @@ class VoxCPMEngine:
             finally:
                 if os.path.exists(temp_ref_path):
                     os.remove(temp_ref_path)
+                try:
+                    import torch
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
+                except Exception:
+                    pass
             return
 
         # 2. Resilient Streaming Synthesizer (Fallback / Testing / CI)
@@ -130,10 +136,12 @@ class VoxCPMEngine:
         total_samples = int(sample_rate * total_duration)
         chunk_samples = 2048 # ~42ms per chunk for silky smooth streaming
         
-        # Base pitch modulated by text hash
-        base_f0 = 145.0 + (hash(text) % 30) - 15
+        # Base pitch modulated deterministically
         if seed is not None:
-            base_f0 += (seed % 10)
+            deterministic_val = seed
+        else:
+            deterministic_val = sum(ord(c) for c in text)
+        base_f0 = 145.0 + (deterministic_val % 30) - 15
             
         for chunk_start in range(0, total_samples, chunk_samples):
             chunk_end = min(total_samples, chunk_start + chunk_samples)

@@ -218,12 +218,20 @@ public final class CreateVoiceViewModel {
             )
             
             try await repository.saveProfile(profile, consent: consent)
+            try? FileManager.default.removeItem(at: audioURL)
+            self.temporaryAudioURL = nil
             isProcessing = false
             return true
         } catch {
             errorMessage = "Failed to create profile: \(error.localizedDescription)"
             isProcessing = false
             return false
+        }
+    }
+    
+    deinit {
+        if let url = temporaryAudioURL {
+            try? FileManager.default.removeItem(at: url)
         }
     }
 }

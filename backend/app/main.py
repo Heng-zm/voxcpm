@@ -68,7 +68,16 @@ async def stream_synthesis(
         except Exception:
             pass
             
+    text = text.strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="Text parameter cannot be empty.")
+        
     raw_audio = bytearray(await reference_audio.read())
+    if len(raw_audio) < 44:
+        raise HTTPException(status_code=400, detail="Invalid audio file: Payload too small or corrupt.")
+    if len(raw_audio) > 50 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Payload Too Large: Reference audio must be under 50MB.")
+        
     voice_hash = compute_acoustic_hash(bytes(raw_audio))
     
     async def audio_stream_generator():

@@ -21,7 +21,7 @@ public struct LiquidGlassMeshGlow: View {
             GeometryReader { proxy in
                 let width = proxy.size.width
                 let height = proxy.size.height
-                let scale = CGFloat(1.0 + energy * 0.45)
+                let scale = reduceMotion ? CGFloat(1.0) : CGFloat(1.0 + energy * 0.45)
                 
                 ZStack {
                     // Cyan top-left orb
@@ -47,6 +47,7 @@ public struct LiquidGlassMeshGlow: View {
                         .blur(radius: 70)
                         .offset(x: width * 0.25, y: height * 0.45)
                 }
+                .compositingGroup()
             }
             .ignoresSafeArea()
             .allowsHitTesting(false)
