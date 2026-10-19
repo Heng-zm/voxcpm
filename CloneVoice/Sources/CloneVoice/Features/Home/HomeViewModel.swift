@@ -91,7 +91,8 @@ public final class HomeViewModel {
                     isBiometricLocked: false
                 )
                 let starterURL = docs.appendingPathComponent("starter_sample.wav")
-                if !FileManager.default.fileExists(atPath: starterURL.path) || (try? Data(contentsOf: starterURL).count ?? 0) <= 44 {
+                let existingSize = (try? Data(contentsOf: starterURL))?.count ?? 0
+                if !FileManager.default.fileExists(atPath: starterURL.path) || existingSize <= 44 {
                     let starterWAV = AudioConverter.generateStarterSampleWAV(durationSeconds: 3.0)
                     try? starterWAV.write(to: starterURL)
                 }
