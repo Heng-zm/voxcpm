@@ -165,35 +165,57 @@ Clone Voice includes fully verified GitHub Actions workflows located in `.github
 
 | Workflow File | Purpose | Runner | Triggers |
 | :--- | :--- | :--- | :--- |
+| [`.github/workflows/build-iphone-ipa.yml`](.github/workflows/build-iphone-ipa.yml) | **Build & export real iPhone `.ipa` package (`generic/platform=iOS`)** | `macos-15` | `workflow_dispatch`, `push` on tags `v*` |
 | [`.github/workflows/ios-ci.yml`](.github/workflows/ios-ci.yml) | iOS 26+ / Swift 6 build & automated test execution | `macos-15` | `push` to `main`, `pull_request` to `main`, `workflow_dispatch` |
 | [`.github/workflows/backend-ci.yml`](.github/workflows/backend-ci.yml) | Python 3.12 syntax, API validation, C2PA, and Khmer tests | `ubuntu-latest` | `push` on `backend/**`, `pull_request` on `backend/**`, `workflow_dispatch` |
 | [`.github/workflows/release.yml`](.github/workflows/release.yml) | Production release packaging & code signing | `macos-15` | `push` on tags `v*`, `workflow_dispatch` |
 
-### 6.1 Workflow Security & Reliability
-- **Least-Privilege Permissions:** Standard CI workflows run strictly with `permissions: contents: read`. Release workflow uses `permissions: contents: write` only when publishing GitHub release assets.
-- **Concurrency Groups:** Configured with `cancel-in-progress: true` to prevent redundant builds on rapid commits.
-- **No Weight Bloat:** Standard CI does not download multi-gigabyte VoxCPM2 model weights over GitHub Actions bandwidth; tests execute against the high-precision streaming acoustic engine. Full GPU weight testing is accessible via manual `workflow_dispatch`.
-- **Diagnostic Artifacts:** Builds automatically upload test execution logs and coverage reports with a 14-day retention policy.
+### 6.1 Building & Downloading an iPhone IPA for Physical Devices
+The workflow [`.github/workflows/build-iphone-ipa.yml`](.github/workflows/build-iphone-ipa.yml) archives the Clone Voice app for a real generic iOS device destination (`generic/platform=iOS`) and exports a verified `.ipa` package.
 
-### 6.2 Code Signing Secrets Configuration (For Distribution)
-To export signed distribution IPAs for TestFlight or the App Store via `.github/workflows/release.yml`, configure the following repository secrets:
+#### How to Trigger the Workflow:
+1. Navigate to the **Actions** tab in your GitHub repository.
+2. Select **Build and Export iPhone IPA** from the left sidebar.
+3. Click **Run workflow**:
+   - **Apple Distribution Method:** Choose `development` (for your registered test iPhone), `ad-hoc`, `app-store`, or `enterprise`.
+   - **Build Configuration:** Choose `Release` (recommended) or `Debug`.
+4. Click **Run workflow**.
+
+#### Where to Download the Resulting Artifact:
+1. When the run finishes, click on the completed workflow run.
+2. Scroll down to the **Artifacts** section at the bottom.
+3. Download **`CloneVoice-iOS-IPA`**, which contains:
+   - `CloneVoice-iphone.ipa` (when signing credentials are configured)
+   - Build and codesign verification logs (`codesign-verification.log`, `archive.log`, `export.log`)
+   - `SIGNING_DIAGNOSTICS.txt` (when credentials are unconfigured, detailing missing secrets).
+
+#### How to Install on a Physical iPhone:
+- **For Development / Ad Hoc IPAs:**
+  1. Ensure your iPhone's UDID is registered under **Devices** in your Apple Developer account and included in your Provisioning Profile.
+  2. Connect your iPhone via USB or Wi-Fi to a Mac.
+  3. Install via **Apple Configurator** (*drag and drop the `.ipa` onto your device*), via **Xcode > Window > Devices and Simulators** (*drag onto Installed Apps*), or via compatible enterprise MDM/sideloading tools.
+- **For App Store / TestFlight IPAs:**
+  - Distribute via Apple App Store Connect / TestFlight.
+
+### 6.2 Code Signing Secrets Configuration
+To enable signed `.ipa` generation, configure these secrets under **Settings > Secrets and variables > Actions**:
 
 | Secret Name | Description | Example Format |
 | :--- | :--- | :--- |
-| `APPLE_CERTIFICATE_BASE64` | Apple Distribution Certificate (.p12) encoded in Base64 | `base64 -i Cert.p12` |
-| `APPLE_CERTIFICATE_PASSWORD` | Password for the exported .p12 certificate file | Plaintext string |
-| `PROVISIONING_PROFILE_BASE64` | App Store Provisioning Profile (.mobileprovision) encoded in Base64 | `base64 -i Profile.mobileprovision` |
-| `APP_STORE_CONNECT_API_KEY_BASE64` | App Store Connect API Key (.p8) encoded in Base64 | `base64 -i AuthKey.p8` |
-| `APP_STORE_CONNECT_API_KEY_ID` | 10-character Key ID from App Store Connect | e.g. `2X9R4274ND` |
-| `APP_STORE_CONNECT_ISSUER_ID` | Issuer UUID from App Store Connect | e.g. `57246542-96fe-1a63-e053-0824d011072a` |
+| `IOS_CERTIFICATE_BASE64` | Apple iOS Developer/Distribution Certificate (.p12) in Base64 | `base64 -i Certificate.p12` |
+| `IOS_CERTIFICATE_PASSWORD` | Password protecting the exported .p12 certificate file | Plaintext string |
+| `IOS_PROVISIONING_PROFILE_BASE64` | iOS Provisioning Profile (.mobileprovision) in Base64 | `base64 -i Profile.mobileprovision` |
+| `APPLE_TEAM_ID` | 10-character Apple Developer Team ID | e.g. `2X9R4274ND` |
+| `IOS_BUNDLE_IDENTIFIER` | App bundle identifier (defaults to `com.clonevoice.app`) | `com.clonevoice.app` |
+| `IOS_KEYCHAIN_PASSWORD` | (Optional) Password for ephemeral build keychain | `secure_keychain_pass_123` |
 
-> [!NOTE]
-> When signing credentials are not configured, `release.yml` safely produces an unsigned release bundle with clear diagnostic status, without failing or fabricating signed credentials.
+> [!IMPORTANT]
+> **Handling Missing Credentials:** If signing secrets are not yet configured in your repository, the workflow executes project and scheme compilation for a real iOS device, generates `CloneVoice-unsigned.zip`, and attaches a detailed `SIGNING_DIAGNOSTICS.txt` report explaining precisely how to obtain and add the missing certificates. It **never** labels an unsigned archive as an installable signed IPA.
 
-### 6.3 Local Workflow Validation
-Validate all GitHub Actions YAML configurations locally prior to committing:
+### 6.3 Local Workflow & Architecture Validation
+Validate all GitHub Actions YAML configurations and test suites locally:
 ```bash
-python validate_workflows.py
+python verify_all.py
 ```
 
 ---
@@ -203,6 +225,8 @@ python validate_workflows.py
 - **Backend Memory Limits (Jetsam):** On consumer iOS hardware, genuine on-device execution of the 2B parameter VoxCPM2 model triggers Jetsam terminations. The app routes inference through the private backend gateway to safeguard responsiveness and battery health.
 - **Microphone Permissions:** If audio capture fails on the simulator, ensure permissions are granted in iOS Settings or test on physical hardware.
 - **Khmer Font & Script Handling:** For optimal syllable boundary rendering in Khmer, ensure the target system includes system font support for complex Unicode grapheme clusters.
+- **IPA Installation Fails (A/B testing):** If an exported Development IPA fails to install on an iPhone, verify that the device UDID is included in the provisioning profile by checking:
+  `security cms -D -i profile.mobileprovision | grep -A 20 ProvisionedDevices`
 
 ---
 

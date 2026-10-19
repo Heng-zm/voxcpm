@@ -57,7 +57,8 @@ def run_workflow_validations():
     expected_workflows = [
         os.path.join(WORKFLOWS_DIR, "ios-ci.yml"),
         os.path.join(WORKFLOWS_DIR, "backend-ci.yml"),
-        os.path.join(WORKFLOWS_DIR, "release.yml")
+        os.path.join(WORKFLOWS_DIR, "release.yml"),
+        os.path.join(WORKFLOWS_DIR, "build-iphone-ipa.yml")
     ]
     
     all_valid = True
