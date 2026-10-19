@@ -45,7 +45,7 @@ public final class HomeViewModel {
     public var backendStatus: BackendStatus?
     public var isCheckingBackend: Bool = false
     
-    private let inferenceService: any VoiceInferenceServiceProtocol
+    private var inferenceService: any VoiceInferenceServiceProtocol
     private let profileRepository: any VoiceProfileRepositoryProtocol
     private let utteranceRepository: any UtteranceRepositoryProtocol
     private let watermarkService: C2PAWatermarkService
@@ -63,6 +63,13 @@ public final class HomeViewModel {
         self.utteranceRepository = utteranceRepository
         self.watermarkService = watermarkService
         self.biometricAuth = biometricAuth
+    }
+    
+    public func updateInferenceService(_ newService: any VoiceInferenceServiceProtocol) {
+        self.inferenceService = newService
+        Task {
+            await checkBackendConnectivity()
+        }
     }
     
     public func checkBackendConnectivity() async {

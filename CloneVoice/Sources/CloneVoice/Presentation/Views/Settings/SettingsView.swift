@@ -4,7 +4,7 @@ import SwiftUI
 public struct SettingsView: View {
     @Environment(AppEnvironment.self) private var env
     
-    @State private var backendURLString: String = "http://127.0.0.1:8000"
+    @State private var backendURLString: String = "https://voxcpm-xsp6.onrender.com"
     @State private var backendStatus: BackendStatus = .offline(reason: "Not checked")
     @State private var isCheckingHealth = false
     @State private var purgeConfirmation = false
@@ -106,15 +106,14 @@ public struct SettingsView: View {
                             TextField("https://voxcpm-xsp6.onrender.com", text: $backendURLString)
                                 .textFieldStyle(.plain)
                                 .font(.system(size: 14, design: .monospaced))
+                                .autocorrectionDisabled()
+                                .textInputAutocapitalization(.never)
+                                .onSubmit {
+                                    updateEndpoint()
+                                }
                             
                             Button("Update") {
-                                if let url = URL(string: backendURLString) {
-                                    env.inferenceClient.baseURL = url
-                                    UserDefaults.standard.set(backendURLString, forKey: "custom_backend_url")
-                                    Task {
-                                        await checkHealth()
-                                    }
-                                }
+                                updateEndpoint()
                             }
                             .font(.system(size: 13, weight: .bold))
                             .foregroundColor(DesignTokens.Colors.acousticCyan)
@@ -264,8 +263,30 @@ public struct SettingsView: View {
         }
     }
     
+    private func updateEndpoint() {
+        let trimmed = backendURLString.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        let formatted = (trimmed.hasPrefix("http://") || trimmed.hasPrefix("https://")) ? trimmed : "https://\(trimmed)"
+        if let url = URL(string: formatted) {
+            backendURLString = formatted
+            env.inferenceClient.baseURL = url
+            UserDefaults.standard.set(formatted, forKey: "custom_backend_url")
+            Task {
+                await checkHealth()
+            }
+        }
+    }
+    
     private func checkHealth() async {
         isCheckingHealth = true
+        if env.executionTarget == .remoteCloud {
+            let trimmed = backendURLString.trimmingCharacters(in: .whitespacesAndNewlines)
+            let formatted = (trimmed.hasPrefix("http://") || trimmed.hasPrefix("https://")) ? trimmed : "https://\(trimmed)"
+            if let url = URL(string: formatted), url != env.inferenceClient.baseURL {
+                env.inferenceClient.baseURL = url
+                UserDefaults.standard.set(formatted, forKey: "custom_backend_url")
+            }
+        }
         do {
             backendStatus = try await env.activeInferenceService.checkHealth()
         } catch {

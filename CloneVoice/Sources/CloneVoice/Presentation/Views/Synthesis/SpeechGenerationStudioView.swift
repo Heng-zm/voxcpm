@@ -70,6 +70,9 @@ public struct SpeechGenerationStudioView: View {
             .onChange(of: router.activeProfileForSynthesis) { _, newProfile in
                 viewModel?.selectedProfile = newProfile
             }
+            .onChange(of: env.executionTarget) { _, _ in
+                viewModel?.updateInferenceService(env.activeInferenceService)
+            }
             .sheet(isPresented: $isSettingsPresented) {
                 if let vm = viewModel {
                     SynthesisSettingsSheet(settings: Bindable(vm).settings)

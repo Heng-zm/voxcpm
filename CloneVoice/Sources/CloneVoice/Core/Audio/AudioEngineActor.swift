@@ -45,7 +45,9 @@ public actor AudioEngineActor: AudioRecordingProtocol {
         
         let file = try AVAudioFile(
             forWriting: destinationURL,
-            settings: targetFormat.settings
+            settings: targetFormat.settings,
+            commonFormat: inputFormat.commonFormat,
+            interleaved: inputFormat.isInterleaved
         )
         
         self.audioEngine = engine

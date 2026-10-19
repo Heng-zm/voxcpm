@@ -8,7 +8,6 @@ public struct HomeConversationView: View {
     
     @State private var viewModel: HomeViewModel?
     @State private var isVoicePickerPresented = false
-    @State private var isAudioImporterPresented = false
     @State private var isCreateVoicePresented = false
     
     public init() {}
@@ -95,12 +94,8 @@ public struct HomeConversationView: View {
                     }
                 })
             }
-            .fileImporter(
-                isPresented: $isAudioImporterPresented,
-                allowedContentTypes: [.audio, .wav, .mp3],
-                allowsMultipleSelection: false
-            ) { result in
-                isCreateVoicePresented = true
+            .onChange(of: env.executionTarget) { _, _ in
+                viewModel?.updateInferenceService(env.activeInferenceService)
             }
         }
     }
@@ -375,13 +370,13 @@ public struct HomeConversationView: View {
                 }
                 
                 HStack(alignment: .bottom, spacing: 10) {
-                    // Audio Import Action
+                    // Create Voice Action
                     Button(action: {
-                        isAudioImporterPresented = true
+                        isCreateVoicePresented = true
                     }) {
                         Image(systemName: "waveform.badge.mic")
                             .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(.secondary)
+                            .foregroundColor(DesignTokens.Colors.acousticCyan)
                             .frame(width: 38, height: 38)
                             .background(Color.white.opacity(0.08))
                             .clipShape(Circle())

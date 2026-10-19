@@ -15,7 +15,7 @@ public final class SynthesisViewModel {
     public var errorMessage: String?
     public var latestUtterance: GeneratedUtterance?
     
-    private let inferenceService: any VoiceInferenceServiceProtocol
+    private var inferenceService: any VoiceInferenceServiceProtocol
     private let utteranceRepository: any UtteranceRepositoryProtocol
     private let streamPlayer: AudioStreamPlayer
     private let watermarkService: C2PAWatermarkService
@@ -33,6 +33,10 @@ public final class SynthesisViewModel {
         self.streamPlayer = streamPlayer
         self.watermarkService = watermarkService
         self.biometricAuth = biometricAuth
+    }
+    
+    public func updateInferenceService(_ newService: any VoiceInferenceServiceProtocol) {
+        self.inferenceService = newService
     }
     
     public func generateSpeech() async {

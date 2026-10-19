@@ -247,6 +247,18 @@ public struct CreateVoiceSheet: View {
                         .font(.system(size: 13, weight: .semibold))
                 }
                 .tint(DesignTokens.Colors.acousticCyan)
+                
+                Divider()
+                
+                Toggle(isOn: Bindable(vm).isBiometricLocked) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "faceid")
+                            .foregroundColor(DesignTokens.Colors.acousticCyan)
+                        Text("Require Face ID to Use This Voice")
+                            .font(.system(size: 13, weight: .medium))
+                    }
+                }
+                .tint(DesignTokens.Colors.acousticCyan)
             }
             .padding(14)
         }

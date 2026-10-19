@@ -15,6 +15,12 @@ public actor AudioStreamPlayer: AudioPlaybackProtocol {
     public func play(from fileURL: URL) throws -> AsyncStream<Float> {
         stop()
         
+        #if os(iOS)
+        let session = AVAudioSession.sharedInstance()
+        try? session.setCategory(.playback, mode: .default, options: [.defaultToSpeaker])
+        try? session.setActive(true)
+        #endif
+        
         let engine = AVAudioEngine()
         let player = AVAudioPlayerNode()
         engine.attach(player)

@@ -22,6 +22,7 @@ public final class CreateVoiceViewModel {
     public var temporaryAudioURL: URL?
     public var isAudioReady: Bool = false
     public var hasUserConsent: Bool = false
+    public var isBiometricLocked: Bool = false
     public var isProcessing: Bool = false
     public var errorMessage: String?
     
@@ -213,7 +214,7 @@ public final class CreateVoiceViewModel {
                 referenceAudioFilename: permanentFilename,
                 sampleDuration: audioDuration,
                 acousticFeaturesHash: biometricSig,
-                isBiometricLocked: true,
+                isBiometricLocked: isBiometricLocked,
                 consentContractId: consent.id
             )
             
